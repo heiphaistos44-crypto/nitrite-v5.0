@@ -90,6 +90,9 @@ class NiTriteGUIComplet:
         self.all_buttons = []  # Liste de tous les boutons
         self.dragging_button = None
         self.drag_button_section = None
+
+        # Compteur de boutons du panneau d'outils
+        self.tools_buttons_count = 0
         
         # Charger le logo Ordi Plus pour l'arrière-plan
         self.load_background_logo()
@@ -443,30 +446,31 @@ class NiTriteGUIComplet:
         total_programs = sum(len(progs) if isinstance(progs, dict) else 0
                            for progs in self.programs.values())
 
-        # 🎯 Titre principal - ULTRA MODERNE
+        # 🎯 Titre principal - V12.0
         title_label = tk.Label(
             header_outer,
-            text=f"🚀 NiTriTe v12 Final - INTERFACE MODERNE",
-            font=('Segoe UI', 24, 'bold'),
+            text="NiTriTe V12.0",
+            font=('Segoe UI', 28, 'bold'),
             fg=self.ACCENT_ORANGE,
             bg=self.DARK_BG2,
-            pady=15
+            pady=12
         )
         title_label.pack()
 
-        # Badge compteur de programmes
-        count_badge = tk.Label(
+        # Badge compteur avec applications + boutons
+        # Note: Le compteur de boutons sera initialisé après la création du panneau
+        self.count_badge = tk.Label(
             header_outer,
-            text=f"⭐ {total_programs} APPLICATIONS DISPONIBLES ⭐",
+            text=f"⭐ {total_programs} Applications",
             font=('Segoe UI', 14, 'bold'),
             fg='#ffffff',
-            bg=self.ACCENT_ORANGE,
+            bg=self.ACCENT_BLUE,
             padx=20,
             pady=8,
             relief='raised',
             bd=2
         )
-        count_badge.pack(pady=(0, 10))
+        self.count_badge.pack(pady=(5, 10))
 
         # 💫 Sous-titre élégant
         subtitle_label = tk.Label(
@@ -1594,6 +1598,9 @@ class NiTriteGUIComplet:
             # Ajouter à la liste des boutons pour le drag & drop
             self.all_buttons.append(btn)
 
+            # Compter les boutons du panneau d'outils
+            self.tools_buttons_count += 1
+
         return section_main_frame
 
     def create_all_tools_sections(self):
@@ -1621,6 +1628,9 @@ class NiTriteGUIComplet:
 
         # Charger l'ordre des sections si disponible
         self.load_sections_order()
+
+        # Mettre à jour le badge avec le nombre total de boutons
+        self.update_count_badge()
 
     def enable_category_drag_drop(self):
         """Active le drag & drop pour réorganiser les catégories"""
@@ -1804,6 +1814,15 @@ class NiTriteGUIComplet:
             self.logger.info(f"Ordre des sections sauvegardé: {config_file}")
         except Exception as e:
             self.logger.error(f"Erreur lors de la sauvegarde de l'ordre des sections: {e}")
+
+    def update_count_badge(self):
+        """Met à jour le badge avec le nombre d'applications et de boutons"""
+        if hasattr(self, 'count_badge'):
+            total_programs = sum(len(progs) if isinstance(progs, dict) else 0
+                               for progs in self.programs.values())
+            self.count_badge.config(
+                text=f"⭐ {total_programs} Applications  •  🛠️ {self.tools_buttons_count} Boutons Utiles"
+            )
 
     def load_sections_order(self):
         """Charge l'ordre des sections depuis le fichier JSON"""
