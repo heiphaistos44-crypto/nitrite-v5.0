@@ -338,6 +338,26 @@ class NiTriteGUIComplet:
                      ('active', self.ACCENT_GREEN_LIGHT),
                      ('pressed', self.ACCENT_GREEN_DARK)
                  ])
+
+        # ═══════════════════════════════════════════════════════════
+        # 🛠️ BOUTONS PANNEAU D'OUTILS - COMPACT
+        # ═══════════════════════════════════════════════════════════
+        style.configure('ToolPanel.TButton',
+                       font=('Segoe UI', 7),
+                       padding=(4, 2),
+                       background=self.DARK_BG3,
+                       foreground=self.DARK_FG,
+                       borderwidth=1,
+                       relief='raised')
+        style.map('ToolPanel.TButton',
+                 background=[
+                     ('active', self.DARK_BG4),
+                     ('pressed', self.ACCENT_BLUE)
+                 ],
+                 foreground=[
+                     ('active', self.DARK_FG),
+                     ('pressed', '#ffffff')
+                 ])
     
     def load_all_programs(self):
         """Charge TOUS les programmes depuis programs.json"""
@@ -1482,17 +1502,17 @@ class NiTriteGUIComplet:
         title_frame = tk.Frame(section_main_frame, bg=self.DARK_BG2)
         title_frame.pack(fill="x", padx=5, pady=2)
 
-        # Titre de la section
+        # Titre de la section - Compact
         title_label = tk.Label(
             title_frame,
             text=f"{icon} {title}",
-            font=("Segoe UI", 11, "bold"),
+            font=("Segoe UI", 9, "bold"),
             bg=self.DARK_BG2,
             fg=self.ACCENT_ORANGE
         )
         title_label.pack(side="left", padx=10)
 
-        # Ajouter les boutons de réorganisation si demandé
+        # Ajouter les boutons de réorganisation si demandé - Compacts
         if allow_reorder:
             # Bouton UP
             btn_up = tk.Button(
@@ -1501,9 +1521,10 @@ class NiTriteGUIComplet:
                 command=lambda: self.move_section_up(title),
                 bg=self.DARK_BG3,
                 fg=self.DARK_FG,
-                width=2,
                 relief="flat",
-                font=("Segoe UI", 8)
+                font=("Segoe UI", 7),
+                padx=4,
+                pady=1
             )
             btn_up.pack(side="right", padx=2)
 
@@ -1514,9 +1535,10 @@ class NiTriteGUIComplet:
                 command=lambda: self.move_section_down(title),
                 bg=self.DARK_BG3,
                 fg=self.DARK_FG,
-                width=2,
                 relief="flat",
-                font=("Segoe UI", 8)
+                font=("Segoe UI", 7),
+                padx=4,
+                pady=1
             )
             btn_down.pack(side="right", padx=2)
 
@@ -1564,7 +1586,8 @@ class NiTriteGUIComplet:
             btn = ttk.Button(
                 buttons_frame,
                 text=label,
-                command=command
+                command=command,
+                style='ToolPanel.TButton'
             )
             btn.grid(row=row, column=col, pady=1, padx=1, sticky="ew")
 
