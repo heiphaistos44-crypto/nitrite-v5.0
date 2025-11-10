@@ -60,14 +60,14 @@
         "Spybot Search & Destroy": {
             "description": "Détection et suppression de spywares et malwares",
             "download_url": "",
-            "install_args": "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /NOCANCEL /TASKS=\"\"",
+            "install_args": "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-",
             "category": "Outils OrdiPlus",
             "essential": true,
             "auto_reject_ads": true,
-            "cleanup_folder": "Outils de nettoyage",
             "admin_required": true,
             "winget_id": "SaferNetworking.SpybotSearchAndDestroy",
-            "note": "Installation via WinGet uniquement (méthode la plus fiable)"
+            "note": "Installation via WinGet uniquement - Mode normal (PAS portable)",
+            "portable": false
         },
         "Adobe Acrobat Reader DC": {
             "description": "Lecteur PDF officiel d'Adobe",
