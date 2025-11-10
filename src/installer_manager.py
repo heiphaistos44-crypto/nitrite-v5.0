@@ -273,6 +273,16 @@ class InstallerManager:
                 return True
             self.log_callback("⚠️ Échec de l'installation via winget.", "warning")
 
+            # Stratégie 2b: Essayer les IDs WinGet alternatifs si présents
+            fallback_ids = program_info.get('winget_fallback_ids', [])
+            if fallback_ids:
+                for idx, fallback_id in enumerate(fallback_ids, 1):
+                    self.log_callback(f"🔄 Tentative {idx} avec WinGet ID alternatif: {fallback_id}...", "info")
+                    if self.install_via_winget(fallback_id, program_info):
+                        self.log_callback(f"✅ {program_name} installé avec succès via winget (ID alternatif).", "success")
+                        return True
+                    self.log_callback(f"⚠️ Échec avec ID alternatif {fallback_id}.", "warning")
+
         self.log_callback(f"❌ Échec de toutes les méthodes d'installation pour {program_name}", "error")
         return False, "Toutes les méthodes d'installation ont échoué"
 

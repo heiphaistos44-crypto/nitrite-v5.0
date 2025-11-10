@@ -59,14 +59,15 @@
         },
         "Spybot Search & Destroy": {
             "description": "Détection et suppression de spywares et malwares",
-            "download_url": "",
+            "download_url": "https://download.spybot.info/SpybotSD2Setup.exe",
             "install_args": "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-",
             "category": "Outils OrdiPlus",
             "essential": true,
             "auto_reject_ads": true,
             "admin_required": true,
-            "winget_id": "SaferNetworking.SpybotSearchAndDestroy",
-            "note": "Installation via WinGet uniquement - Mode normal (PAS portable)",
+            "winget_id": "Safer-Networking.Spybot",
+            "winget_fallback_ids": ["SaferNetworking.SpybotSearchAndDestroy", "Spybot.SearchAndDestroy"],
+            "note": "Installation avec URL directe + WinGet fallback",
             "portable": false
         },
         "Adobe Acrobat Reader DC": {
