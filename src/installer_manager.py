@@ -841,6 +841,7 @@ class InstallerManager:
             
             # Construire la commande winget
             cmd = ['winget', 'install', '--id', winget_id, '--silent', '--accept-package-agreements', '--accept-source-agreements']
+            self.log_callback(f"🔧 Commande WinGet: {' '.join(cmd)}", "info")
             
             # Vérifier si admin requis
             admin_required = program_info.get('admin_required', True)
@@ -853,7 +854,9 @@ class InstallerManager:
                     self.log_callback(f"✅ {program_info['name']} installé via winget", "success")
                     return True
                 else:
-                    self.log_callback(f"❌ Erreur winget: {stderr[:200]}", "error")
+                    self.log_callback(f"❌ Erreur winget (code {returncode}):", "error")
+                    self.log_callback(f"STDOUT: {stdout if stdout else '(vide)'}", "error")
+                    self.log_callback(f"STDERR: {stderr if stderr else '(vide)'}", "error")
                     return False
             else:
                 # Exécuter sans privilèges admin
@@ -869,7 +872,9 @@ class InstallerManager:
                     self.log_callback(f"✅ {program_info['name']} installé via winget", "success")
                     return True
                 else:
-                    self.log_callback(f"❌ Erreur winget: {result.stderr[:200]}", "error")
+                    self.log_callback(f"❌ Erreur winget (code {result.returncode}):", "error")
+                    self.log_callback(f"STDOUT: {result.stdout if result.stdout else '(vide)'}", "error")
+                    self.log_callback(f"STDERR: {result.stderr if result.stderr else '(vide)'}", "error")
                     return False
                     
         except subprocess.TimeoutExpired:
