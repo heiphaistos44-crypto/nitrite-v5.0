@@ -283,15 +283,6 @@ class InstallerManager:
                         return True
                     self.log_callback(f"⚠️ Échec avec ID alternatif {fallback_id}.", "warning")
 
-        # Stratégie 3: Chocolatey (si disponible)
-        choco_id = program_info.get('choco_id')
-        if choco_id:
-            self.log_callback(f"🔄 Tentative via Chocolatey avec ID: {choco_id}...", "info")
-            if self.install_via_chocolatey(choco_id, program_info):
-                self.log_callback(f"✅ {program_name} installé avec succès via Chocolatey.", "success")
-                return True
-            self.log_callback("⚠️ Échec de l'installation via Chocolatey.", "warning")
-
         self.log_callback(f"❌ Échec de toutes les méthodes d'installation pour {program_name}", "error")
         return False, "Toutes les méthodes d'installation ont échoué"
 
