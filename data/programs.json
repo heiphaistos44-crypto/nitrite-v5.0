@@ -59,7 +59,7 @@
         },
         "Spybot Search & Destroy": {
             "description": "Détection et suppression de spywares et malwares",
-            "download_url": "https://download.spybot.info/SpybotSD2-latest.exe",
+            "download_url": "https://sourceforge.net/projects/spybot/files/latest/download",
             "install_args": "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /NOCANCEL /TASKS=\"\"",
             "category": "Outils OrdiPlus",
             "essential": true,
@@ -67,7 +67,7 @@
             "cleanup_folder": "Outils de nettoyage",
             "admin_required": true,
             "winget_id": "SaferNetworking.SpybotSearchAndDestroy",
-            "note": "Installation via winget recommandée - URL alternative SpybotSD2-latest.exe"
+            "note": "Installation via SourceForge - Dernière version stable"
         },
         "Adobe Acrobat Reader DC": {
             "description": "Lecteur PDF officiel d'Adobe",
@@ -879,10 +879,12 @@
         },
         "Spybot Anti-Beacon": {
             "description": "Bloquer les télémétries Windows",
-            "download_url": "https://www.safer-networking.org/spybot-anti-beacon/",
+            "download_url": "https://sourceforge.net/projects/spybot/files/latest/download",
             "install_args": "/S",
             "category": "Sécurité",
-            "admin_required": true
+            "admin_required": true,
+            "winget_id": "SaferNetworking.SpybotSearchAndDestroy",
+            "note": "Installation via SourceForge - Dernière version stable"
         },
         "O&O ShutUp10++": {
             "description": "Désactiver la collecte de données Windows",

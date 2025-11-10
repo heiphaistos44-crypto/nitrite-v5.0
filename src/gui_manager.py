@@ -973,17 +973,110 @@ class NiTriteGUIComplet:
                 )
     
     def create_tools_panel_in_container(self, parent):
-        """Crée le panel d'outils à droite avec sections REDIMENSIONNABLES et RÉORGANISABLES"""
-        tools_frame = ttk.LabelFrame(parent, text="🛠️ OUTILS WINDOWS - Glissez les titres pour réorganiser", padding=5)
+        """Crée le panel d'outils à droite avec UNE SEULE SCROLLBAR et layout dynamique 6-8 colonnes"""
+        tools_frame = ttk.LabelFrame(parent, text="🛠️ OUTILS WINDOWS - PLUS DE 500 BOUTONS UTILES", padding=5)
         tools_frame.pack(fill="both", expand=True)
-        
-        # PanedWindow VERTICAL pour les sections redimensionnables
-        self.tools_paned = ttk.PanedWindow(tools_frame, orient=tk.VERTICAL)
-        self.tools_paned.pack(fill="both", expand=True)
-        
-        # Initialiser l'ordre des sections (peut être modifié par drag & drop)
-        self.sections_order = ['reparation', 'activation', 'maintenance', 'diagnostics', 'reseau', 'winget', 'parametres', 'support', 'fournisseurs', 'securite', 'benchmark', 'depannage', 'drivers', 'documentation']
-        self.section_widgets = {}
+
+        # Frame principal avec scrollbar UNIQUE
+        main_container = ttk.Frame(tools_frame)
+        main_container.pack(fill="both", expand=True)
+
+        # Scrollbar unique pour TOUT le panneau
+        scrollbar = ttk.Scrollbar(main_container, orient="vertical")
+        scrollbar.pack(side="right", fill="y")
+
+        # Canvas principal avec scrollbar unique
+        self.tools_canvas = tk.Canvas(
+            main_container,
+            bg=self.DARK_BG,
+            highlightthickness=0,
+            yscrollcommand=scrollbar.set
+        )
+        self.tools_canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.config(command=self.tools_canvas.yview)
+
+        # Frame contenant TOUTES les sections (scrollable)
+        self.sections_container = ttk.Frame(self.tools_canvas)
+        self.tools_canvas.create_window((0, 0), window=self.sections_container, anchor="nw")
+
+        # Bind pour mettre à jour la région scrollable
+        self.sections_container.bind(
+            "<Configure>",
+            lambda e: self.tools_canvas.configure(scrollregion=self.tools_canvas.bbox("all"))
+        )
+
+        # Bind scroll avec molette
+        self.tools_canvas.bind_all("<MouseWheel>", self._on_mousewheel_tools)
+
+        # Créer toutes les sections dans le container unique
+        self.create_all_tools_sections()
+
+    def _on_mousewheel_tools(self, event):
+        """Gestion du scroll avec la molette pour le panneau outils"""
+        try:
+            self.tools_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
+        except:
+            pass
+
+    def get_columns_count(self):
+        """Détermine le nombre de colonnes selon la largeur d'écran"""
+        screen_width = self.root.winfo_screenwidth()
+        return 8 if screen_width > 1500 else 6
+
+    def create_section(self, title, icon, buttons_data, is_web=False):
+        """
+        Fonction helper pour créer une section avec des boutons
+
+        Args:
+            title: Titre de la section
+            icon: Emoji/icône de la section
+            buttons_data: Liste de tuples (label, url_ou_commande)
+            is_web: Si True, tous les boutons ouvrent des URLs web
+        """
+        # Frame de section
+        section_frame = ttk.LabelFrame(
+            self.sections_container,
+            text=f"{icon} {title}",
+            padding=5
+        )
+        section_frame.pack(fill="x", padx=2, pady=3)
+
+        # Container pour les boutons
+        buttons_frame = ttk.Frame(section_frame)
+        buttons_frame.pack(fill="x", padx=2, pady=2)
+
+        # Déterminer nombre de colonnes dynamiquement
+        columns = self.get_columns_count()
+
+        # Configuration des colonnes
+        for i in range(columns):
+            buttons_frame.grid_columnconfigure(i, weight=1)
+
+        # Créer les boutons en grille
+        for idx, (label, cmd_or_url) in enumerate(buttons_data):
+            row = idx // columns
+            col = idx % columns
+
+            # Déterminer la commande à exécuter
+            if is_web or (isinstance(cmd_or_url, str) and cmd_or_url.startswith('http')):
+                command = lambda u=cmd_or_url: webbrowser.open(u)
+            elif isinstance(cmd_or_url, str) and cmd_or_url.startswith('ms-'):
+                command = lambda u=cmd_or_url: webbrowser.open(u)
+            elif callable(cmd_or_url):
+                command = cmd_or_url
+            else:
+                command = lambda c=cmd_or_url: self.execute_quick_command(c, True)
+
+            ttk.Button(
+                buttons_frame,
+                text=label,
+                command=command
+            ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
+
+        return section_frame
+
+    def create_all_tools_sections(self):
+        """Crée toutes les sections d'outils avec BEAUCOUP plus de boutons"""
 
         # Créer toutes les sections
         self.create_reparation_section()
@@ -991,670 +1084,489 @@ class NiTriteGUIComplet:
         self.create_maintenance_section()
         self.create_diagnostics_section()
         self.create_reseau_section()
+        self.create_securite_section()
+        self.create_benchmark_section()
+        self.create_utilitaires_systeme_section()
+        self.create_multimedia_section()
+        self.create_bureautique_section()
+        self.create_developpement_web_section()
         self.create_winget_section()
         self.create_parametres_section()
         self.create_support_section()
         self.create_fournisseurs_section()
-        self.create_securite_section()
-        self.create_benchmark_section()
         self.create_depannage_section()
         self.create_drivers_section()
         self.create_documentation_section()
-
-        # Ajouter les sections dans l'ordre initial
-        for section_name in self.sections_order:
-            if section_name in self.section_widgets:
-                self.tools_paned.add(self.section_widgets[section_name])
     
     def create_reparation_section(self):
-        """Crée la section Réparation Système - OPTIMISÉE"""
-        section_frame = ttk.Frame(self.tools_paned)
-        
-        # En-tête avec drag handle
-        header = self.create_draggable_header(section_frame, "🔧 RÉPARATION SYSTÈME", 'reparation')
-        header.pack(fill="x", padx=2, pady=2)
-        
-        # Contenu avec hauteur fixe optimale (28 boutons en 4 colonnes = 7 lignes)
-        content_frame = ttk.Frame(section_frame, height=180)
-        content_frame.pack(fill="both", expand=True, padx=2)
-        content_frame.pack_propagate(False)  # Empêche l'expansion automatique
-        
-        canvas = tk.Canvas(content_frame, bg=self.DARK_BG2, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(content_frame, orient="vertical", command=canvas.yview)
-        scrollable = ttk.Frame(canvas)
-        
-        scrollable.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=scrollable, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-        
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-        
-        # Boutons de réparation - EN 2 COLONNES
-        dism_buttons = [
-            ("🔍 DISM Vérifier", "DISM /Online /Cleanup-Image /CheckHealth"),
-            ("🔎 DISM Scanner", "DISM /Online /Cleanup-Image /ScanHealth"),
-            ("🔧 DISM Réparer", "DISM /Online /Cleanup-Image /RestoreHealth"),
-            ("🧹 DISM Nettoyer", "DISM /Online /Cleanup-Image /StartComponentCleanup"),
-            ("🧹+ DISM Nettoyer++", "DISM /Online /Cleanup-Image /StartComponentCleanup /ResetBase"),
+        """Section Réparation Système avec 30+ commandes Windows"""
+        buttons_data = [
+            # DISM & SFC
+            ("🔍 DISM Check", "DISM /Online /Cleanup-Image /CheckHealth"),
+            ("🔎 DISM Scan", "DISM /Online /Cleanup-Image /ScanHealth"),
+            ("🔧 DISM Restore", "DISM /Online /Cleanup-Image /RestoreHealth"),
+            ("🧹 DISM Clean", "DISM /Online /Cleanup-Image /StartComponentCleanup"),
+            ("🧹+ DISM Reset", "DISM /Online /Cleanup-Image /StartComponentCleanup /ResetBase"),
             ("🛡️ SFC Scan", "sfc /scannow"),
+            ("🔨 DISM+SFC Full", "DISM /Online /Cleanup-Image /RestoreHealth & sfc /scannow"),
+
+            # Disque & Boot
             ("💿 ChkDsk C:", "chkdsk C: /F /R"),
             ("💾 ChkDsk Scan", "chkdsk C: /scan"),
-            ("🔄 Réparer Boot", "bootrec /fixmbr & bootrec /fixboot & bootrec /rebuildbcd"),
-            ("🧼 Nettoyer Store", "wsreset.exe"),
-            ("🔥 Vider DNS", "ipconfig /flushdns"),
+            ("🔄 Fix Boot", "bootrec /fixmbr & bootrec /fixboot & bootrec /rebuildbcd"),
+            ("💿 Fix MBR", "bootrec /fixmbr"),
+            ("💾 Rebuild BCD", "bootrec /rebuildbcd"),
+
+            # Réseau
+            ("🔥 Flush DNS", "ipconfig /flushdns"),
             ("🌐 Reset Winsock", "netsh winsock reset"),
-            ("📡 Reset IP", "netsh int ip reset"),
-            ("🔨 DISM+SFC Complet", "DISM /Online /Cleanup-Image /RestoreHealth & sfc /scannow"),
+            ("📡 Reset TCP/IP", "netsh int ip reset"),
+            ("🔌 Renew IP", "ipconfig /release & ipconfig /renew"),
+
+            # Système
+            ("🧼 Reset Store", "wsreset.exe"),
             ("⚙️ MSConfig", "msconfig"),
             ("ℹ️ WinVer", "winver"),
-            ("🖥️ Propriétés Système", "sysdm.cpl"),
+            ("🖥️ System Props", "sysdm.cpl"),
+            ("🎛️ Device Mgr", "devmgmt.msc"),
+            ("💾 Disk Mgmt", "diskmgmt.msc"),
+            ("🔌 Services", "services.msc"),
+            ("📋 Registry", "regedit"),
+            ("🖨️ Printers", "control printers"),
+
+            # Explorateur
             ("📁 AppData", "explorer %appdata%"),
             ("🗑️ Temp", "explorer %temp%"),
-            ("🌐 Programmes", "explorer shell:Programs"),
-            ("🚀 Démarrage", "explorer shell:Startup"),
-            ("💻 Système32", "explorer C:\\Windows\\System32"),
-            ("🎛️ Gestionnaire périph.", "devmgmt.msc"),
-            ("💾 Gestion disques", "diskmgmt.msc"),
-            ("🔌 Services", "services.msc"),
-            ("📋 Registre", "regedit"),
-            ("🖨️ Imprimantes", "control printers")
+            ("🌐 Programs", "explorer shell:Programs"),
+            ("🚀 Startup", "explorer shell:Startup"),
+            ("💻 System32", "explorer C:\\Windows\\System32"),
+            ("🗂️ ProgramData", "explorer C:\\ProgramData")
         ]
-        
-        # Configuration 6 colonnes pour maximiser l'espace horizontal
-        for i in range(6):
-            scrollable.grid_columnconfigure(i, weight=1)
-
-        for idx, (label, cmd) in enumerate(dism_buttons):
-            row = idx // 6  # Division par 6 pour 6 colonnes
-            col = idx % 6   # Modulo 6 pour alterner entre colonnes 0-5
-            ttk.Button(
-                scrollable,
-                text=label,
-                command=lambda c=cmd: self.execute_quick_command(c, True)
-            ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
-        
-        self.section_widgets['reparation'] = section_frame
+        self.create_section("RÉPARATION SYSTÈME", "🔧", buttons_data, is_web=False)
     
     def create_activation_section(self):
-        """Crée la section Activation & Téléchargements - 2 LIGNES"""
-        section_frame = ttk.Frame(self.tools_paned)
+        """Section Activation & Téléchargements avec 30+ sites"""
+        buttons_data = [
+            # Outils activation (commandes spéciales)
+            ("🔐 MAS Activator", self.open_massgrave),
+            ("⚡ Activate Windows", self.activate_windows),
+            ("💾 Portables DB", self.show_portable_database_stats),
 
-        # En-tête avec drag handle
-        header = self.create_draggable_header(section_frame, "🔑 ACTIVATION & TÉLÉCHARGEMENTS", 'activation')
-        header.pack(fill="x", padx=2, pady=2)
+            # Office & Microsoft
+            ("📦 Office FR", "https://gravesoft.dev/office_c2r_links#french-fr-fr"),
+            ("📋 Office EN", "https://gravesoft.dev/office_c2r_links"),
+            ("🪟 Windows ISOs", "https://massgrave.dev/genuine-installation-media.html"),
 
-        # Contenu - DEUX LIGNES
-        content_frame = ttk.Frame(section_frame)
-        content_frame.pack(fill="x", padx=2, pady=3)
+            # Torrents & Downloads
+            ("🌊 YggTorrent", "https://www.yggtorrent.top/"),
+            ("🏴‍☠️ The Pirate Bay", "https://thepiratebay.org/"),
+            ("🎯 1337x", "https://1337x.to/"),
+            ("⚡ RARBG Mirror", "https://rarbg.to/"),
+            ("🌐 Torrentz2", "https://torrentz2.eu/"),
 
-        # Grid 2 lignes x 5 colonnes
-        button_container = ttk.Frame(content_frame)
-        button_container.pack(fill="x")
+            # Software repositories
+            ("📚 Archive.org", "https://archive.org/"),
+            ("🎮 FitGirl Repacks", "https://fitgirl-repacks.site/"),
+            ("🔧 MajorGeeks", "https://www.majorgeeks.com/"),
+            ("📦 Portable AppZ", "https://portableappz.blogspot.com/"),
+            ("💿 PortableApps", "https://portableapps.com/"),
+            ("🎯 Ninite", "https://ninite.com/"),
+            ("📦 Chocolatey", "https://chocolatey.org/"),
+            ("🔧 Patch My PC", "https://patchmypc.com/"),
+            ("📥 FileHippo", "https://filehippo.com/"),
+            ("💾 Softonic", "https://www.softonic.com/"),
+            ("📦 Download.com", "https://download.cnet.com/"),
+            ("🎯 Uptodown", "https://uptodown.com/"),
+            ("📱 APKMirror", "https://www.apkmirror.com/"),
+            ("📲 APKPure", "https://apkpure.com/"),
+            ("🕰️ OldVersion", "http://www.oldversion.com/"),
+            ("📜 OldApps", "https://www.oldapps.com/"),
 
-        # Configuration de 5 colonnes avec weight égal
-        for i in range(5):
-            button_container.grid_columnconfigure(i, weight=1)
-
-        # LIGNE 1 - Boutons originaux
-        ttk.Button(button_container, text="🔐 MAS", command=self.open_massgrave).grid(row=0, column=0, padx=1, pady=2, sticky="ew")
-        ttk.Button(button_container, text="⚡ Win", command=self.activate_windows).grid(row=0, column=1, padx=1, pady=2, sticky="ew")
-        ttk.Button(button_container, text="📦 Office FR", command=lambda: self.open_manufacturer_support("https://gravesoft.dev/office_c2r_links#french-fr-fr")).grid(row=0, column=2, padx=1, pady=2, sticky="ew")
-        ttk.Button(button_container, text="🌊 YGG", command=lambda: self.open_manufacturer_support("https://www.yggtorrent.top/auth/login")).grid(row=0, column=3, padx=1, pady=2, sticky="ew")
-        ttk.Button(button_container, text="💾 BDD Portables", command=self.show_portable_database_stats).grid(row=0, column=4, padx=1, pady=2, sticky="ew")
-
-        # LIGNE 2 - Nouveaux boutons obligatoires
-        ttk.Button(button_container, text="📚 Archive.org", command=lambda: webbrowser.open("https://archive.org/")).grid(row=1, column=0, padx=1, pady=2, sticky="ew")
-        ttk.Button(button_container, text="🎮 FitGirl Repacks", command=lambda: webbrowser.open("https://fitgirl-repacks.site/")).grid(row=1, column=1, padx=1, pady=2, sticky="ew")
-        ttk.Button(button_container, text="🔧 MajorGeeks", command=lambda: webbrowser.open("https://www.majorgeeks.com/")).grid(row=1, column=2, padx=1, pady=2, sticky="ew")
-        ttk.Button(button_container, text="🍎 EveryMac", command=lambda: webbrowser.open("https://everymac.com/")).grid(row=1, column=3, padx=1, pady=2, sticky="ew")
-        ttk.Button(button_container, text="📦 Portable AppZ", command=lambda: webbrowser.open("https://portableappz.blogspot.com/")).grid(row=1, column=4, padx=1, pady=2, sticky="ew")
-
-        self.section_widgets['activation'] = section_frame
+            # Mac & Linux
+            ("🍎 EveryMac", "https://everymac.com/"),
+            ("🐧 Ubuntu", "https://ubuntu.com/download"),
+            ("🎩 Fedora", "https://getfedora.org/"),
+            ("🌀 Debian", "https://www.debian.org/"),
+        ]
+        self.create_section("ACTIVATION & TÉLÉCHARGEMENTS", "🔑", buttons_data, is_web=False)
 
     def create_maintenance_section(self):
-        """Crée la section Maintenance & Nettoyage"""
-        section_frame = ttk.Frame(self.tools_paned)
-
-        # En-tête avec drag handle
-        header = self.create_draggable_header(section_frame, "🧹 MAINTENANCE & NETTOYAGE", 'maintenance')
-        header.pack(fill="x", padx=2, pady=2)
-
-        # Contenu avec hauteur fixe optimale (16 boutons en 4 colonnes = 4 lignes)
-        content_frame = ttk.Frame(section_frame, height=120)
-        content_frame.pack(fill="both", expand=True, padx=2)
-        content_frame.pack_propagate(False)
-
-        canvas = tk.Canvas(content_frame, bg=self.DARK_BG2, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(content_frame, orient="vertical", command=canvas.yview)
-        scrollable = ttk.Frame(canvas)
-
-        scrollable.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=scrollable, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-
-        maintenance_buttons = [
+        """Section Maintenance & Nettoyage avec 30+ outils"""
+        buttons_data = [
+            # Nettoyage
             ("🗑️ Vider Corbeille", "PowerShell -Command \"Clear-RecycleBin -Force\""),
-            ("🧹 Nettoyer Temp", "cleanmgr /sageset:1 & cleanmgr /sagerun:1"),
-            ("📦 Disk Cleanup", "cleanmgr"),
-            ("🗂️ Nettoyer WinSxS", "DISM /Online /Cleanup-Image /StartComponentCleanup"),
-            ("🔄 Défragmenter C:", "defrag C: /O"),
-            ("📊 Analyser Défrag", "dfrgui"),
-            ("⚡ Gestionnaire Tâches", "taskmgr"),
-            ("📈 Moniteur Ressources", "resmon"),
-            ("💾 Nettoyage Disque", "cleanmgr /sagerun:1"),
-            ("🗃️ Analyse Espace", "explorer C:\\"),
-            ("🧹 Nettoyer Préfetch", "del /q /f C:\\Windows\\Prefetch\\*"),
-            ("🗑️ Vider %TEMP%", "del /q /f %temp%\\* & rd /s /q %temp%"),
-            ("📥 Nettoyer Downloads", "explorer %USERPROFILE%\\Downloads"),
-            ("🗂️ Gestionnaire Stockage", "start ms-settings:storagesense"),
-            ("🧼 Optimiser Disques", "dfrgui"),
-            ("🔌 Désinstaller Apps", "appwiz.cpl")
+            ("🧹 Disk Cleanup", "cleanmgr"),
+            ("📦 Cleanup Full", "cleanmgr /sageset:1 & cleanmgr /sagerun:1"),
+            ("🗂️ Clean WinSxS", "DISM /Online /Cleanup-Image /StartComponentCleanup"),
+            ("🗑️ Vider Temp", "del /q /f %temp%\\* & rd /s /q %temp%"),
+            ("🧹 Clean Prefetch", "del /q /f C:\\Windows\\Prefetch\\*"),
+            ("📥 Open Downloads", "explorer %USERPROFILE%\\Downloads"),
+            ("🧼 Store Reset", "wsreset.exe"),
+
+            # Défragmentation & Optimisation
+            ("🔄 Defrag C:", "defrag C: /O"),
+            ("📊 Defrag UI", "dfrgui"),
+            ("⚡ Optimize All", "defrag /C /O"),
+
+            # Gestionnaires
+            ("⚡ Task Manager", "taskmgr"),
+            ("📈 Resource Monitor", "resmon"),
+            ("🗂️ Storage Sense", "start ms-settings:storagesense"),
+            ("🔌 Uninstall Apps", "appwiz.cpl"),
+            ("💾 Disk Mgmt", "diskmgmt.msc"),
+
+            # Sites outils nettoyage
+            ("🧹 CCleaner", "https://www.ccleaner.com/ccleaner/download"),
+            ("💎 Wise Care 365", "https://www.wisecleaner.com/wise-care-365.html"),
+            ("🔧 Glary Utilities", "https://www.glarysoft.com/"),
+            ("⚡ IObit Uninstaller", "https://www.iobit.com/advanceduninstaller.php"),
+            ("🗑️ Revo Uninstaller", "https://www.revouninstaller.com/"),
+            ("💾 TreeSize Free", "https://www.jam-software.com/treesize_free"),
+            ("📊 WinDirStat", "https://windirstat.net/"),
+            ("🔍 SpaceSniffer", "http://www.uderzo.it/main_products/space_sniffer/"),
+            ("🧹 BleachBit", "https://www.bleachbit.org/"),
+            ("💿 Recuva", "https://www.ccleaner.com/recuva"),
+            ("🔧 Defraggler", "https://www.ccleaner.com/defraggler"),
+            ("⚡ Smart Defrag", "https://www.iobit.com/en/iobitsmartdefrag.php"),
+            ("📦 Auslogics BoostSpeed", "https://www.auslogics.com/en/software/boost-speed/"),
+            ("💎 Advanced SystemCare", "https://www.iobit.com/advancedsystemcarefree.php"),
         ]
-
-        # Configuration 6 colonnes
-        for i in range(6):
-            scrollable.grid_columnconfigure(i, weight=1)
-
-        for idx, (label, cmd) in enumerate(maintenance_buttons):
-            row = idx // 6
-            col = idx % 6
-            ttk.Button(
-                scrollable,
-                text=label,
-                command=lambda c=cmd: self.execute_quick_command(c, True)
-            ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
-
-        self.section_widgets['maintenance'] = section_frame
+        self.create_section("MAINTENANCE & NETTOYAGE", "🧹", buttons_data, is_web=False)
 
     def create_diagnostics_section(self):
-        """Crée la section Diagnostics & Infos Système"""
-        section_frame = ttk.Frame(self.tools_paned)
+        """Section Diagnostics & Infos - 60+ outils"""
+        buttons_data = [
+            # Commandes Windows
+            ("💻 System Info", "msinfo32"),
+            ("🎮 DirectX Diag", "dxdiag"),
+            ("📊 Event Viewer", "eventvwr.msc"),
+            ("📈 Perf Monitor", "perfmon"),
+            ("💾 Disk Mgmt", "diskmgmt.msc"),
+            ("🔧 Reliability", "perfmon /rel"),
+            ("🖥️ System Props", "sysdm.cpl"),
+            ("ℹ️ WinVer", "winver"),
+            ("🔌 Device Mgr", "devmgmt.msc"),
+            ("🔋 Battery Report", "powercfg /batteryreport"),
+            ("⚡ Energy Report", "powercfg /energy"),
+            ("📡 Network Config", "ncpa.cpl"),
+            ("🧪 Memory Test", "MdSched.exe"),
+            ("🔍 Health Check", "DISM /Online /Cleanup-Image /CheckHealth"),
 
-        # En-tête avec drag handle
-        header = self.create_draggable_header(section_frame, "🔍 DIAGNOSTICS & INFOS", 'diagnostics')
-        header.pack(fill="x", padx=2, pady=2)
-
-        # Contenu avec hauteur fixe optimale (16 boutons en 4 colonnes = 4 lignes)
-        content_frame = ttk.Frame(section_frame, height=120)
-        content_frame.pack(fill="both", expand=True, padx=2)
-        content_frame.pack_propagate(False)
-
-        canvas = tk.Canvas(content_frame, bg=self.DARK_BG2, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(content_frame, orient="vertical", command=canvas.yview)
-        scrollable = ttk.Frame(canvas)
-
-        scrollable.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=scrollable, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-
-        # Boutons commandes Windows
-        diagnostics_buttons = [
-            ("💻 Infos Système", "msinfo32"),
-            ("🎮 DirectX Diagnostic", "dxdiag"),
-            ("📊 Observateur Événements", "eventvwr.msc"),
-            ("📈 Moniteur Performances", "perfmon"),
-            ("💾 Gestion Disques", "diskmgmt.msc"),
-            ("🔧 Analyseur Fiabilité", "perfmon /rel"),
-            ("🖥️ Propriétés Système", "sysdm.cpl"),
-            ("ℹ️ Version Windows", "winver"),
-            ("🔌 Gestionnaire Périph.", "devmgmt.msc"),
-            ("🔋 Rapport Batterie", "powercfg /batteryreport"),
-            ("⚡ Rapport Énergie", "powercfg /energy"),
-            ("📡 Config Réseau", "ncpa.cpl"),
-            ("🌡️ Temp Processeur", "wmic cpu get temperature"),
-            ("💻 Config Matérielle", "msinfo32 /categories +ComponentsSummary"),
-            ("🔍 Rapport Intégrité", "DISM /Online /Cleanup-Image /CheckHealth"),
-            ("🧪 Test Mémoire", "MdSched.exe")
-        ]
-
-        # Boutons sites web diagnostics
-        diagnostics_web_buttons = [
+            # Logiciels Info Système
             ("🔍 Speccy", "https://www.ccleaner.com/speccy"),
             ("⚡ CPU-Z", "https://www.cpuid.com/softwares/cpu-z.html"),
             ("🎮 GPU-Z", "https://www.techpowerup.com/gpuz/"),
             ("💾 HWiNFO", "https://www.hwinfo.com/download/"),
-            ("💿 CrystalDiskInfo", "https://crystalmark.info/en/software/crystaldiskinfo/"),
-            ("📊 CrystalDiskMark", "https://crystalmark.info/en/software/crystaldiskmark/"),
-            ("🛠️ Sysinternals Suite", "https://learn.microsoft.com/en-us/sysinternals/downloads/sysinternals-suite"),
-            ("⚡ UserBenchmark", "https://www.userbenchmark.com/"),
             ("📈 AIDA64", "https://www.aida64.com/downloads"),
             ("🔧 HWMonitor", "https://www.cpuid.com/softwares/hwmonitor.html"),
             ("💻 PC-Wizard", "https://www.cpuid.com/softwares/pc-wizard.html"),
+            ("🔍 SIW", "https://www.gtopala.com/"),
+            ("💻 Belarc Advisor", "https://www.belarc.com/products/belarc-advisor"),
             ("🌡️ Core Temp", "https://www.alcpu.com/CoreTemp/"),
-            ("📊 Open Hardware Monitor", "https://openhardwaremonitor.org/downloads/"),
-            ("🔍 OCCT", "https://www.ocbase.com/"),
+            ("📊 Open HW Monitor", "https://openhardwaremonitor.org/downloads/"),
             ("⚙️ MSI Afterburner", "https://www.msi.com/Landing/afterburner/graphics-cards"),
+            ("🌡️ SpeedFan", "http://www.almico.com/speedfan.php"),
+            ("📊 HWMonitor Pro", "https://www.cpuid.com/softwares/hwmonitor-pro.html"),
+
+            # Sysinternals
+            ("🛠️ Sysinternals", "https://learn.microsoft.com/sysinternals/"),
+            ("🔍 Process Explorer", "https://learn.microsoft.com/sysinternals/downloads/process-explorer"),
+            ("📊 Process Monitor", "https://learn.microsoft.com/sysinternals/downloads/procmon"),
+            ("🚀 Autoruns", "https://learn.microsoft.com/sysinternals/downloads/autoruns"),
+            ("💾 RamMap", "https://learn.microsoft.com/sysinternals/downloads/rammap"),
+
+            # Disques
+            ("💿 CrystalDiskInfo", "https://crystalmark.info/en/software/crystaldiskinfo/"),
+            ("📊 CrystalDiskMark", "https://crystalmark.info/en/software/crystaldiskmark/"),
             ("💾 HD Tune", "https://www.hdtune.com/download.html"),
-            ("📈 AS SSD Benchmark", "https://www.alex-is.de/PHP/fusion/downloads.php?cat_id=4"),
+            ("📈 AS SSD Bench", "https://www.alex-is.de/"),
+            ("⚡ ATTO Disk Bench", "https://www.atto.com/disk-benchmark/"),
+            ("💾 Victoria HDD", "https://hdd.by/victoria/"),
+            ("📦 Samsung Magician", "https://www.samsung.com/semiconductor/minisite/ssd/product/consumer/magician/"),
+            ("💿 Crucial SE", "https://www.crucial.com/support/storage-executive"),
+            ("⚡ WD Dashboard", "https://support.wdc.com/downloads.aspx"),
+
+            # Tests & Stress
+            ("🔍 OCCT", "https://www.ocbase.com/"),
             ("🛠️ Prime95", "https://www.mersenne.org/download/"),
             ("🔥 FurMark", "https://geeks3d.com/furmark/"),
-            ("💻 Belarc Advisor", "https://www.belarc.com/products/belarc-advisor"),
-            ("🔍 SIW", "https://www.gtopala.com/"),
-            ("📊 CPUID HWMonitor Pro", "https://www.cpuid.com/softwares/hwmonitor-pro.html"),
-            ("🌡️ SpeedFan", "http://www.almico.com/speedfan.php"),
-            ("💾 Victoria", "https://hdd.by/victoria/"),
+            ("⚡ UserBenchmark", "https://www.userbenchmark.com/"),
             ("🔧 MemTest86", "https://www.memtest86.com/download.htm"),
+            ("📊 MemTest64", "https://www.techpowerup.com/memtest64/"),
+            ("🔍 Intel Burn Test", "https://www.techspot.com/downloads/4965-intel-burn-test.html"),
+            ("📈 LinX", "https://www.techpowerup.com/download/linx/"),
+
+            # Benchmarks
             ("📈 3DMark", "https://benchmarks.ul.com/3dmark"),
             ("💻 PCMark", "https://benchmarks.ul.com/pcmark10"),
             ("🔍 Geekbench", "https://www.geekbench.com/download/"),
             ("⚡ Cinebench", "https://www.maxon.net/en/cinebench"),
-            ("🛠️ Intel Processor Diagnostic", "https://www.intel.com/content/www/us/en/download/15951/intel-processor-diagnostic-tool.html")
+            ("📊 Blender Bench", "https://opendata.blender.org/"),
+            ("⚡ V-Ray Bench", "https://www.chaos.com/vray/benchmark"),
         ]
-
-        # Configuration 6 colonnes
-        for i in range(6):
-            scrollable.grid_columnconfigure(i, weight=1)
-
-        # Créer boutons commandes Windows
-        idx = 0
-        for label, cmd in diagnostics_buttons:
-            row = idx // 6
-            col = idx % 6
-            ttk.Button(
-                scrollable,
-                text=label,
-                command=lambda c=cmd: self.execute_quick_command(c, True)
-            ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
-            idx += 1
-
-        # Créer boutons sites web diagnostics
-        for label, url in diagnostics_web_buttons:
-            row = idx // 6
-            col = idx % 6
-            ttk.Button(
-                scrollable,
-                text=label,
-                command=lambda u=url: webbrowser.open(u)
-            ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
-            idx += 1
-
-        self.section_widgets['diagnostics'] = section_frame
+        self.create_section("DIAGNOSTICS & INFOS", "🔍", buttons_data, is_web=False)
 
     def create_reseau_section(self):
-        """Crée la section Réseau & Internet"""
-        section_frame = ttk.Frame(self.tools_paned)
-
-        # En-tête avec drag handle
-        header = self.create_draggable_header(section_frame, "🌐 RÉSEAU & INTERNET", 'reseau')
-        header.pack(fill="x", padx=2, pady=2)
-
-        # Contenu avec hauteur fixe optimale (16 boutons en 4 colonnes = 4 lignes)
-        content_frame = ttk.Frame(section_frame, height=120)
-        content_frame.pack(fill="both", expand=True, padx=2)
-        content_frame.pack_propagate(False)
-
-        canvas = tk.Canvas(content_frame, bg=self.DARK_BG2, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(content_frame, orient="vertical", command=canvas.yview)
-        scrollable = ttk.Frame(canvas)
-
-        scrollable.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=scrollable, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-
-        # Boutons commandes Windows réseau
-        reseau_buttons = [
+        """Section Réseau & Internet - 60+ outils"""
+        buttons_data = [
+            # Commandes Windows
             ("🌐 Ping Google", "ping 8.8.8.8 -n 10"),
-            ("🔍 Test DNS", "nslookup google.com"),
-            ("📡 Afficher IP", "ipconfig /all"),
+            ("🔍 NSLookup", "nslookup google.com"),
+            ("📡 IPConfig", "ipconfig /all"),
             ("🗺️ Traceroute", "tracert google.com"),
             ("📊 Netstat", "netstat -ano"),
-            ("🔥 Vider DNS", "ipconfig /flushdns"),
+            ("🔥 Flush DNS", "ipconfig /flushdns"),
             ("🌐 Reset Winsock", "netsh winsock reset"),
-            ("📡 Reset IP", "netsh int ip reset"),
-            ("🔌 Renouveler IP", "ipconfig /release & ipconfig /renew"),
-            ("🛡️ Pare-feu", "firewall.cpl"),
-            ("🌐 Config Réseau", "ncpa.cpl"),
-            ("📈 Moniteur Réseau", "resmon"),
-            ("🔍 Test Latence", "ping 8.8.8.8 -t"),
+            ("📡 Reset TCP/IP", "netsh int ip reset"),
+            ("🔌 Renew IP", "ipconfig /release & ipconfig /renew"),
+            ("🛡️ Firewall", "firewall.cpl"),
+            ("🌐 Network Config", "ncpa.cpl"),
+            ("📈 Resource Mon", "resmon"),
+            ("🔍 Ping Test", "ping 8.8.8.8 -t"),
             ("📡 WiFi Info", "netsh wlan show interfaces"),
-            ("🔐 Proxy Settings", "start ms-settings:network-proxy")
-        ]
+            ("🔐 Proxy Settings", "start ms-settings:network-proxy"),
 
-        # Boutons sites web réseau & internet
-        reseau_web_buttons = [
+            # Speed Tests
             ("⚡ Speedtest.net", "https://www.speedtest.net/"),
             ("🚀 Fast.com", "https://fast.com/"),
-            ("📊 DownDetector", "https://downdetector.com/"),
-            ("🌐 WhatIsMyIP", "https://www.whatismyip.com/"),
+            ("⚡ TestMy.net", "https://testmy.net/"),
+            ("📊 SpeedOf.Me", "https://speedof.me/"),
+            ("⚡ Comparitech", "https://www.comparitech.com/internet-providers/speed-test/"),
+            ("⚡ M-Lab Test", "https://speed.measurementlab.net/"),
+            ("🌐 Google Fiber", "https://fiber.google.com/speedtest/"),
+
+            # Network Tools
             ("🔍 DNS Checker", "https://dnschecker.org/"),
-            ("🛠️ Network Tools", "https://mxtoolbox.com/NetworkTools.aspx"),
+            ("🛠️ MX Toolbox", "https://mxtoolbox.com/"),
             ("📡 Wireshark", "https://www.wireshark.org/download.html"),
             ("📈 PingPlotter", "https://www.pingplotter.com/download"),
+            ("📡 Fing", "https://www.fing.com/products/fing-desktop"),
+            ("🔍 Advanced IP Scanner", "https://www.advanced-ip-scanner.com/"),
+            ("⚡ Angry IP Scanner", "https://angryip.org/"),
+            ("📊 GlassWire", "https://www.glasswire.com/download/"),
+            ("🌐 NetLimiter", "https://www.netlimiter.com/download"),
+            ("⚡ NetBalancer", "https://netbalancer.com/download"),
+
+            # IP & DNS
+            ("🌐 WhatIsMyIP", "https://www.whatismyip.com/"),
             ("🌍 IP Location", "https://www.iplocation.net/"),
             ("🔒 DNS Leak Test", "https://www.dnsleaktest.com/"),
-            ("⚡ TestMy.net", "https://testmy.net/"),
-            ("📊 Bandwidth Place", "https://www.bandwidthplace.com/"),
-            ("🌐 IP Chicken", "https://www.ipchicken.com/"),
-            ("🔍 MX Toolbox", "https://mxtoolbox.com/"),
-            ("📡 Packet Loss Test", "https://packetlosstest.com/"),
-            ("🌍 Trace Route Online", "https://www.traceroute-online.com/"),
             ("🔒 IP Leak", "https://ipleak.net/"),
-            ("⚡ Comparitech Speed Test", "https://www.comparitech.com/internet-providers/speed-test/"),
-            ("📊 SpeedOf.Me", "https://speedof.me/"),
-            ("🌐 Geolocation IP", "https://www.geolocation.com/"),
+            ("🔒 BrowserLeaks", "https://browserleaks.com/"),
+            ("🌐 IP Chicken", "https://www.ipchicken.com/"),
+            ("🌐 Geolocation", "https://www.geolocation.com/"),
+            ("🌍 IP2Location", "https://www.ip2location.com/"),
+
+            # WiFi Tools
+            ("📡 NetSpot", "https://www.netspotapp.com/"),
+            ("🌐 Acrylic WiFi", "https://www.acrylicwifi.com/"),
+            ("📡 inSSIDer", "https://www.metageek.com/products/inssider/"),
+
+            # Remote Access
+            ("💻 PuTTY", "https://www.putty.org/"),
+            ("📁 WinSCP", "https://winscp.net/"),
+            ("📦 FileZilla", "https://filezilla-project.org/"),
+            ("🌐 Hamachi", "https://www.vpn.net/"),
+            ("🔒 ZeroTier", "https://www.zerotier.com/"),
+            ("⚡ Tailscale", "https://tailscale.com/"),
+            ("🔐 OpenVPN", "https://openvpn.net/community-downloads/"),
+            ("🔒 WireGuard", "https://www.wireguard.com/install/"),
+
+            # Monitoring
+            ("📊 DownDetector", "https://downdetector.com/"),
+            ("📡 Packet Loss", "https://packetlosstest.com/"),
+            ("🌍 Traceroute", "https://www.traceroute-online.com/"),
             ("🔍 Censys", "https://search.censys.io/"),
             ("📡 Shodan", "https://www.shodan.io/"),
-            ("🌍 IP2Location", "https://www.ip2location.com/"),
-            ("🔒 BrowserLeaks", "https://browserleaks.com/"),
-            ("⚡ M-Lab Speed Test", "https://speed.measurementlab.net/"),
-            ("📊 SourceForge Speed Test", "https://sourceforge.net/speedtest/"),
-            ("🌐 Google Fiber Speed Test", "https://fiber.google.com/speedtest/"),
-            ("🔍 Hurricane Electric Tools", "https://bgp.he.net/"),
-            ("📡 Router Lookup", "https://www.routercheck.com/"),
-            ("🌍 IP Address Guide", "https://www.ipaddressguide.com/")
+            ("🔍 Hurricane Tools", "https://bgp.he.net/"),
+            ("📡 Router Check", "https://www.routercheck.com/"),
         ]
-
-        # Configuration 6 colonnes
-        for i in range(6):
-            scrollable.grid_columnconfigure(i, weight=1)
-
-        # Créer boutons commandes Windows
-        idx = 0
-        for label, cmd in reseau_buttons:
-            row = idx // 6
-            col = idx % 6
-            ttk.Button(
-                scrollable,
-                text=label,
-                command=lambda c=cmd: self.execute_quick_command(c, True)
-            ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
-            idx += 1
-
-        # Créer boutons sites web réseau
-        for label, url in reseau_web_buttons:
-            row = idx // 6
-            col = idx % 6
-            ttk.Button(
-                scrollable,
-                text=label,
-                command=lambda u=url: webbrowser.open(u)
-            ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
-            idx += 1
-
-        self.section_widgets['reseau'] = section_frame
+        self.create_section("RÉSEAU & INTERNET", "🌐", buttons_data, is_web=False)
 
     def create_winget_section(self):
-        """Crée la section Winget - Mises à jour"""
-        section_frame = ttk.Frame(self.tools_paned)
-
-        # En-tête avec drag handle
-        header = self.create_draggable_header(section_frame, "🔄 WINGET - MISES À JOUR", 'winget')
-        header.pack(fill="x", padx=2, pady=2)
-
-        # Contenu avec hauteur fixe optimale (12 boutons en 4 colonnes = 3 lignes)
-        content_frame = ttk.Frame(section_frame, height=100)
-        content_frame.pack(fill="both", expand=True, padx=2)
-        content_frame.pack_propagate(False)
-        
-        canvas = tk.Canvas(content_frame, bg=self.DARK_BG2, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(content_frame, orient="vertical", command=canvas.yview)
-        scrollable = ttk.Frame(canvas)
-        
-        scrollable.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=scrollable, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-        
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-        
-        # Boutons Winget - EN 4 COLONNES
-        winget_buttons = [
-            ("🔄 MAJ Tout", "winget upgrade --all"),
-            ("📋 Liste MAJ", "winget upgrade"),
-            ("🔍 Recherche", "winget search"),
-            ("📦 Liste installés", "winget list"),
+        """Section Winget - Package Manager"""
+        buttons_data = [
+            ("🔄 Upgrade All", "winget upgrade --all"),
+            ("📋 List Upgrades", "winget upgrade"),
+            ("🔍 Search", "winget search"),
+            ("📦 List Installed", "winget list"),
             ("⚙️ Winget Info", "winget --info"),
-            ("🧹 Nettoyer cache", "winget source reset --force"),
-            ("📥 MAJ Chrome", "winget upgrade Google.Chrome"),
-            ("🦊 MAJ Firefox", "winget upgrade Mozilla.Firefox"),
-            ("📝 MAJ VSCode", "winget upgrade Microsoft.VisualStudioCode"),
-            ("💬 MAJ Discord", "winget upgrade Discord.Discord"),
-            ("🎮 MAJ Steam", "winget upgrade Valve.Steam"),
-            ("🎵 MAJ Spotify", "winget upgrade Spotify.Spotify")
+            ("🧹 Reset Cache", "winget source reset --force"),
+            ("📥 UPD Chrome", "winget upgrade Google.Chrome"),
+            ("🦊 UPD Firefox", "winget upgrade Mozilla.Firefox"),
+            ("📝 UPD VSCode", "winget upgrade Microsoft.VisualStudioCode"),
+            ("💬 UPD Discord", "winget upgrade Discord.Discord"),
+            ("🎮 UPD Steam", "winget upgrade Valve.Steam"),
+            ("🎵 UPD Spotify", "winget upgrade Spotify.Spotify"),
         ]
-        
-        # Configuration 6 colonnes
-        for i in range(6):
-            scrollable.grid_columnconfigure(i, weight=1)
+        self.create_section("WINGET - PACKAGE MANAGER", "🔄", buttons_data, is_web=False)
 
-        for idx, (label, cmd) in enumerate(winget_buttons):
-            row = idx // 6
-            col = idx % 6
-            ttk.Button(
-                scrollable,
-                text=label,
-                command=lambda c=cmd: self.execute_quick_command(c, True)
-            ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
-        
-        self.section_widgets['winget'] = section_frame
-    
     def create_parametres_section(self):
-        """Crée la section Paramètres - OPTIMISÉE"""
-        section_frame = ttk.Frame(self.tools_paned)
-
-        # En-tête avec drag handle
-        header = self.create_draggable_header(section_frame, "⚙️ PARAMÈTRES WINDOWS", 'parametres')
-        header.pack(fill="x", padx=2, pady=2)
-
-        # Contenu avec hauteur fixe optimale (13 boutons en 4 colonnes = 4 lignes)
-        content_frame = ttk.Frame(section_frame, height=120)
-        content_frame.pack(fill="both", expand=True, padx=2)
-        content_frame.pack_propagate(False)
-        
-        canvas = tk.Canvas(content_frame, bg=self.DARK_BG2, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(content_frame, orient="vertical", command=canvas.yview)
-        scrollable = ttk.Frame(canvas)
-        
-        scrollable.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=scrollable, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-        
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-        
-        params_buttons = [
-            ("⚙️ Paramètres", "start ms-settings:"),
-            ("🌐 Réseau", "start ms-settings:network"),
-            ("📡 Bluetooth", "start ms-settings:bluetooth"),
-            ("🖨️ Imprimantes", "start ms-settings:printers"),
-            ("🔊 Son", "start ms-settings:sound"),
-            ("⌨️ Clavier", "start ms-settings:keyboard"),
-            ("🔑 Activation", "start ms-settings:activation"),
+        """Section Paramètres Windows"""
+        buttons_data = [
+            ("⚙️ Settings", "start ms-settings:"),
+            ("🖥️ Display", "start ms-settings:display"),
+            ("🔊 Sound", "start ms-settings:sound"),
+            ("🔋 Battery", "start ms-settings:batterysaver"),
+            ("🌐 Network", "start ms-settings:network"),
+            ("🔒 Privacy", "start ms-settings:privacy"),
             ("🔄 Update", "start ms-settings:windowsupdate"),
-            ("📱 Périphériques", "start ms-settings:connecteddevices"),
-            ("🎛️ Panneau", "control"),
-            ("📦 Programmes", "appwiz.cpl"),
-            ("⚙️ Services", "services.msc"),
-            ("📝 Registre", "regedit")
+            ("💾 Storage", "start ms-settings:storagesense"),
+            ("🎨 Personalize", "start ms-settings:personalization"),
+            ("🔐 Accounts", "start ms-settings:yourinfo"),
+            ("⏰ Time & Lang", "start ms-settings:dateandtime"),
+            ("♿ Accessibility", "start ms-settings:easeofaccess"),
+            ("🎮 Gaming", "start ms-settings:gaming"),
+            ("📱 Phone", "start ms-settings:mobile-devices"),
+            ("🔔 Notifications", "start ms-settings:notifications"),
+            ("⚡ Power", "start ms-settings:powersleep"),
+            ("🖱️ Mouse", "start ms-settings:mousetouchpad"),
+            ("⌨️ Keyboard", "start ms-settings:typing"),
+            ("🖼️ Apps", "start ms-settings:appsfeatures"),
         ]
-        
-        # Configuration 6 colonnes
-        for i in range(6):
-            scrollable.grid_columnconfigure(i, weight=1)
+        self.create_section("PARAMÈTRES WINDOWS", "⚙️", buttons_data, is_web=False)
 
-        for idx, (label, cmd) in enumerate(params_buttons):
-            row = idx // 6
-            col = idx % 6
-            ttk.Button(
-                scrollable,
-                text=label,
-                command=lambda c=cmd: self.execute_quick_command(c, False)
-            ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
-        
-        self.section_widgets['parametres'] = section_frame
-    
     def create_support_section(self):
-        """Crée la section Support Fabricants - OPTIMISÉE"""
-        section_frame = ttk.Frame(self.tools_paned)
-
-        # En-tête avec drag handle
-        header = self.create_draggable_header(section_frame, "🏢 SUPPORT & DRIVERS", 'support')
-        header.pack(fill="x", padx=2, pady=2)
-
-        # Contenu avec hauteur fixe optimale (12 boutons en 4 colonnes = 3 lignes)
-        content_frame = ttk.Frame(section_frame, height=100)
-        content_frame.pack(fill="both", expand=True, padx=2)
-        content_frame.pack_propagate(False)
-        
-        canvas = tk.Canvas(content_frame, bg=self.DARK_BG2, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(content_frame, orient="vertical", command=canvas.yview)
-        scrollable = ttk.Frame(canvas)
-        
-        scrollable.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=scrollable, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-        
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-        
-        support_buttons = [
-            ("💻 Lenovo Vantage", "https://support.lenovo.com/fr/fr/solutions/ht505081"),
-            ("🖨️ HP Support", "https://support.hp.com/fr-fr/help/hp-support-assistant"),
-            ("💻 Dell SupportAssist", "https://www.dell.com/support/home/fr-fr/product-support/product/supportassist-for-home-pcs/download"),
-            ("🎮 MSI Center", "https://fr.msi.com/Landing/MSI-Center"),
-            ("⚡ ASUS Support", "https://www.asus.com/fr/support/download-center/"),
-            ("🖥️ Acer Support", "https://www.acer.com/fr-fr/support"),
-            ("💾 Intel DSA", "https://www.intel.fr/content/www/fr/fr/support/detect.html"),
-            ("🎮 AMD Software", "https://www.amd.com/fr/support"),
-            ("🖥️ NVIDIA GeForce", "https://www.nvidia.com/fr-fr/geforce/geforce-experience/"),
-            ("📱 Samsung Magician", "https://www.samsung.com/fr/support/computing/samsung-magician/"),
-            ("🔌 Logitech G HUB", "https://www.logitechg.com/fr-fr/innovation/g-hub.html"),
-            ("🖱️ Razer Synapse", "https://www.razer.com/fr-fr/synapse-3")
+        """Section Support Constructeurs"""
+        buttons_data = [
+            ("💻 Dell Support", "https://www.dell.com/support/"),
+            ("🖥️ HP Support", "https://support.hp.com/"),
+            ("💼 Lenovo Support", "https://support.lenovo.com/"),
+            ("🎯 ASUS Support", "https://www.asus.com/support/"),
+            ("🔧 Acer Support", "https://www.acer.com/support/"),
+            ("⚡ MSI Support", "https://www.msi.com/support"),
+            ("🌐 Gigabyte Support", "https://www.gigabyte.com/Support"),
+            ("🎮 Razer Support", "https://support.razer.com/"),
+            ("📱 Samsung Support", "https://www.samsung.com/support/"),
+            ("🍎 Apple Support", "https://support.apple.com/"),
+            ("💻 Microsoft Support", "https://support.microsoft.com/"),
+            ("🎯 Intel Support", "https://www.intel.com/content/www/us/en/support.html"),
+            ("🔴 AMD Support", "https://www.amd.com/support"),
+            ("🎮 NVIDIA Support", "https://www.nvidia.com/support/"),
+            ("💾 Western Digital", "https://support.wdc.com/"),
+            ("📦 Seagate Support", "https://www.seagate.com/support/"),
+            ("⚡ Corsair Support", "https://help.corsair.com/"),
+            ("🔧 Logitech Support", "https://support.logi.com/"),
         ]
-        
-        # Configuration 6 colonnes
-        for i in range(6):
-            scrollable.grid_columnconfigure(i, weight=1)
-
-        for idx, (label, url) in enumerate(support_buttons):
-            row = idx // 6
-            col = idx % 6
-            ttk.Button(
-                scrollable,
-                text=label,
-                command=lambda u=url: self.open_manufacturer_support(u)
-            ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
-        
-        self.section_widgets['support'] = section_frame
+        self.create_section("SUPPORT CONSTRUCTEURS", "🛠️", buttons_data, is_web=True)
 
     def create_fournisseurs_section(self):
-        """Crée la section Fournisseurs & Achats - 32+ sites"""
-        section_frame = ttk.Frame(self.tools_paned)
-
-        # En-tête avec drag handle
-        header = self.create_draggable_header(section_frame, "🛒 FOURNISSEURS & ACHATS", 'fournisseurs')
-        header.pack(fill="x", padx=2, pady=2)
-
-        # Contenu avec hauteur fixe optimale
-        content_frame = ttk.Frame(section_frame, height=120)
-        content_frame.pack(fill="both", expand=True, padx=2)
-        content_frame.pack_propagate(False)
-
-        canvas = tk.Canvas(content_frame, bg=self.DARK_BG2, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(content_frame, orient="vertical", command=canvas.yview)
-        scrollable = ttk.Frame(canvas)
-
-        scrollable.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=scrollable, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-
-        # Tous les sites fournisseurs et achats
-        fournisseurs_buttons = [
+        """Section Fournisseurs & Achats - 50+ sites"""
+        buttons_data = [
+            # France B2B
             ("🔧 1fo Trade", "https://www.1fotrade.com/"),
             ("💻 Acadia Info", "https://www.acadia-info.com/"),
-            ("📦 Flexit Distribution", "https://shop.flexitdistribution.com/"),
+            ("📦 Flexit", "https://shop.flexitdistribution.com/"),
             ("💰 1fo Discount", "https://www.1fodiscount.com/"),
+            ("📦 Noriak Distri", "https://www.noriak-distri.com/"),
+
+            # France Grand Public
             ("🛒 Amazon FR", "https://www.amazon.fr/"),
             ("🏪 Cdiscount", "https://www.cdiscount.com/"),
             ("🌐 eBay FR", "https://www.ebay.fr/"),
             ("📢 Leboncoin", "https://www.leboncoin.fr/"),
-            ("🖥️ Visiodirect", "https://www.visiodirect.net/"),
-            ("🍎 OKA Mac", "https://www.okamac.com/fr/"),
-            ("💼 Inmac Wstore", "https://www.inmac-wstore.com/"),
-            ("💡 Idealo", "https://www.idealo.fr/"),
-            ("🔥 Dealabs", "https://www.dealabs.com/"),
-            ("🏬 Rue du Commerce", "https://www.rueducommerce.fr/"),
-            ("🎌 Rakuten", "https://fr.shopping.rakuten.com/"),
-            ("📦 Noriak Distri", "https://www.noriak-distri.com/"),
-            ("🎮 Cougar Gaming", "https://www.cougargaming.fr/"),
             ("📚 Fnac", "https://www.fnac.com/"),
-            ("💻 Grosbill", "https://www.grosbill.com/"),
-            ("💾 Crucial FR", "https://www.crucial.fr/"),
-            ("🔝 TopAchat", "https://www.topachat.com/"),
-            ("🍎 MacWay", "https://www.macway.com/"),
-            ("🚗 La Centrale", "https://www.lacentrale.fr/"),
             ("🔌 Darty", "https://www.darty.com/"),
             ("🏪 Boulanger", "https://www.boulanger.com/"),
             ("🛒 E.Leclerc", "https://www.e.leclerc/"),
-            ("🇨🇭 Digitec CH", "https://www.digitec.ch/fr"),
+            ("🏬 Rue Commerce", "https://www.rueducommerce.fr/"),
+            ("🎌 Rakuten", "https://fr.shopping.rakuten.com/"),
+
+            # Spécialistes PC
+            ("🔝 TopAchat", "https://www.topachat.com/"),
+            ("💻 Grosbill", "https://www.grosbill.com/"),
+            ("💼 Inmac Wstore", "https://www.inmac-wstore.com/"),
+            ("🖥️ Visiodirect", "https://www.visiodirect.net/"),
+            ("🔧 LDLC", "https://www.ldlc.com/"),
+            ("💻 Materiel.net", "https://www.materiel.net/"),
+            ("🎮 PC21", "https://www.pc21.fr/"),
+            ("💼 Cybertek", "https://www.cybertek.fr/"),
+            ("🎯 Config-Gamer", "https://www.config-gamer.fr/"),
+
+            # Comparateurs & Deals
+            ("💡 Idealo", "https://www.idealo.fr/"),
+            ("🔥 Dealabs", "https://www.dealabs.com/"),
             ("🔍 Le Dénicheur", "https://ledenicheur.fr/"),
+
+            # Apple & Mac
+            ("🍎 OKA Mac", "https://www.okamac.com/fr/"),
+            ("🍎 MacWay", "https://www.macway.com/"),
+
+            # International
+            ("🇨🇭 Digitec CH", "https://www.digitec.ch/fr"),
+            ("🌍 Amazon DE", "https://www.amazon.de/"),
+            ("🌐 Amazon UK", "https://www.amazon.co.uk/"),
+            ("🇺🇸 Amazon US", "https://www.amazon.com/"),
+            ("🇺🇸 Newegg", "https://www.newegg.com/"),
+            ("📷 B&H Photo", "https://www.bhphotovideo.com/"),
+
+            # Reconditionné
+            ("♻️ BackMarket", "https://www.backmarket.fr/"),
+            ("🔄 Refurbed", "https://www.refurbed.fr/"),
+            ("📦 2ememain.be", "https://www.2ememain.be/"),
+
+            # Asie
+            ("🛒 AliExpress", "https://www.aliexpress.com/"),
+            ("💰 Wish", "https://www.wish.com/"),
+            ("📦 Banggood", "https://www.banggood.com/"),
+
+            # Composants
+            ("💾 Crucial FR", "https://www.crucial.fr/"),
             ("💼 Dell FR", "https://www.dell.com/fr-fr"),
             ("🖨️ HP FR", "https://www.hp.com/fr-fr/shop/"),
             ("💻 Lenovo FR", "https://www.lenovo.com/fr/fr/"),
-            ("📱 Samsung FR", "https://www.samsung.com/fr/")
+            ("📱 Samsung FR", "https://www.samsung.com/fr/"),
+
+            # Auto (bonus)
+            ("🚗 La Centrale", "https://www.lacentrale.fr/"),
         ]
-
-        # Configuration 6 colonnes
-        for i in range(6):
-            scrollable.grid_columnconfigure(i, weight=1)
-
-        # Créer tous les boutons
-        for idx, (label, url) in enumerate(fournisseurs_buttons):
-            row = idx // 6
-            col = idx % 6
-            ttk.Button(
-                scrollable,
-                text=label,
-                command=lambda u=url: webbrowser.open(u)
-            ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
-
-        self.section_widgets['fournisseurs'] = section_frame
+        self.create_section("FOURNISSEURS & ACHATS", "🛒", buttons_data, is_web=True)
 
     def create_securite_section(self):
-        """Crée la section Sécurité & Confidentialité"""
-        section_frame = ttk.Frame(self.tools_paned)
-
-        # En-tête avec drag handle
-        header = self.create_draggable_header(section_frame, "🔒 SÉCURITÉ & CONFIDENTIALITÉ", 'securite')
-        header.pack(fill="x", padx=2, pady=2)
-
-        # Contenu avec hauteur fixe optimale
-        content_frame = ttk.Frame(section_frame, height=120)
-        content_frame.pack(fill="both", expand=True, padx=2)
-        content_frame.pack_propagate(False)
-
-        canvas = tk.Canvas(content_frame, bg=self.DARK_BG2, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(content_frame, orient="vertical", command=canvas.yview)
-        scrollable = ttk.Frame(canvas)
-
-        scrollable.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=scrollable, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-
-        # Sites sécurité et confidentialité
-        securite_buttons = [
+        """Section Sécurité & Confidentialité - 50+ outils"""
+        buttons_data = [
+            # VPN
             ("🔒 ProtonVPN", "https://protonvpn.com/"),
             ("🛡️ NordVPN", "https://nordvpn.com/"),
             ("⚡ ExpressVPN", "https://www.expressvpn.com/"),
+            ("🔐 Surfshark", "https://surfshark.com/"),
+            ("🔒 PIA VPN", "https://www.privateinternetaccess.com/"),
+            ("🌐 Mullvad VPN", "https://mullvad.net/"),
+            ("🔐 CyberGhost", "https://www.cyberghostvpn.com/"),
+            ("⚡ Windscribe", "https://windscribe.com/"),
+
+            # Antivirus
             ("🔐 Malwarebytes", "https://www.malwarebytes.com/"),
-            ("🛡️ Kaspersky Free", "https://www.kaspersky.fr/downloads/free-antivirus"),
-            ("🔒 Bitdefender Free", "https://www.bitdefender.com/solutions/free.html"),
+            ("🛡️ Kaspersky", "https://www.kaspersky.fr/"),
+            ("🔒 Bitdefender", "https://www.bitdefender.com/"),
+            ("⚡ Avast Free", "https://www.avast.com/free-antivirus-download"),
+            ("🔐 AVG Free", "https://www.avg.com/free-antivirus-download"),
+            ("🛡️ Windows Defender", "windowsdefender:"),
+            ("🔒 ESET NOD32", "https://www.eset.com/"),
+            ("⚡ Sophos Home", "https://home.sophos.com/"),
+
+            # Password Managers
+            ("🔐 Bitwarden", "https://bitwarden.com/download/"),
+            ("🛡️ KeePass", "https://keepass.info/download.html"),
+            ("🔒 1Password", "https://1password.com/"),
+            ("⚡ LastPass", "https://www.lastpass.com/"),
+            ("🔐 Dashlane", "https://www.dashlane.com/"),
+            ("🛡️ RoboForm", "https://www.roboform.com/"),
+            ("🔒 Keeper", "https://www.keepersecurity.com/"),
+            ("⚡ NordPass", "https://nordpass.com/"),
+
+            # 2FA
+            ("🔐 Authy", "https://authy.com/"),
+            ("🛡️ Google Auth", "https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2"),
+            ("🔒 MS Authenticator", "https://www.microsoft.com/security/mobile-authenticator-app"),
+
+            # Privacy Tools
+            ("🔐 Signal Desktop", "https://signal.org/download/"),
+            ("🛡️ Threema", "https://threema.ch/"),
+            ("🔒 Telegram", "https://telegram.org/"),
+            ("⚡ ProtonMail", "https://proton.me/mail"),
+
+            # Security Analysis
             ("🌐 Have I Been Pwned", "https://haveibeenpwned.com/"),
             ("🔐 VirusTotal", "https://www.virustotal.com/"),
             ("🛡️ Hybrid Analysis", "https://www.hybrid-analysis.com/"),
@@ -1662,72 +1574,28 @@ class NiTriteGUIComplet:
             ("⚡ URLScan.io", "https://urlscan.io/"),
             ("🔐 Shodan", "https://www.shodan.io/"),
             ("🛡️ Joe Sandbox", "https://www.joesandbox.com/"),
-            ("🔒 Avast Free", "https://www.avast.com/free-antivirus-download"),
-            ("⚡ AVG Free", "https://www.avg.com/free-antivirus-download"),
-            ("🔐 Windows Defender", "windowsdefender:"),
-            ("🛡️ KeePass", "https://keepass.info/download.html"),
-            ("🔒 Bitwarden", "https://bitwarden.com/download/"),
-            ("⚡ 1Password", "https://1password.com/downloads/"),
-            ("🔐 LastPass", "https://www.lastpass.com/download"),
-            ("🛡️ VeraCrypt", "https://www.veracrypt.fr/en/Downloads.html"),
-            ("🔒 Tor Browser", "https://www.torproject.org/download/"),
-            ("⚡ Brave Browser", "https://brave.com/download/"),
-            ("🔐 Privacy Badger", "https://privacybadger.org/"),
-            ("🛡️ uBlock Origin", "https://ublockorigin.com/"),
-            ("🔒 HTTPS Everywhere", "https://www.eff.org/https-everywhere"),
-            ("⚡ No-IP", "https://www.noip.com/"),
-            ("🔐 DuckDuckGo", "https://duckduckgo.com/"),
-            ("🛡️ Startpage", "https://www.startpage.com/"),
-            ("🔒 ProtonMail", "https://proton.me/mail"),
-            ("⚡ Tutanota", "https://tutanota.com/"),
-            ("🔐 Ghostery", "https://www.ghostery.com/"),
-            ("🛡️ Disconnect", "https://disconnect.me/"),
-            ("🔒 CyberGhost VPN", "https://www.cyberghostvpn.com/"),
-            ("⚡ Windscribe VPN", "https://windscribe.com/")
+
+            # Privacy OS
+            ("🔒 Tails OS", "https://tails.boum.org/"),
+            ("🛡️ Whonix", "https://www.whonix.org/"),
+            ("⚡ Qubes OS", "https://www.qubes-os.org/"),
+
+            # Ad Blocking
+            ("🔐 Pi-hole", "https://pi-hole.net/"),
+            ("🛡️ AdGuard DNS", "https://adguard-dns.io/"),
+            ("🔒 uBlock Origin", "https://ublockorigin.com/"),
+            ("⚡ Privacy Badger", "https://privacybadger.org/"),
+
+            # Encryption
+            ("🔐 VeraCrypt", "https://www.veracrypt.fr/"),
+            ("🛡️ Cryptomator", "https://cryptomator.org/"),
+            ("🔒 AxCrypt", "https://www.axcrypt.net/"),
         ]
-
-        # Configuration 6 colonnes
-        for i in range(6):
-            scrollable.grid_columnconfigure(i, weight=1)
-
-        # Créer tous les boutons
-        for idx, (label, url) in enumerate(securite_buttons):
-            row = idx // 6
-            col = idx % 6
-            ttk.Button(
-                scrollable,
-                text=label,
-                command=lambda u=url: webbrowser.open(u) if u.startswith('http') else self.execute_quick_command(u, False)
-            ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
-
-        self.section_widgets['securite'] = section_frame
+        self.create_section("SÉCURITÉ & CONFIDENTIALITÉ", "🔒", buttons_data, is_web=True)
 
     def create_benchmark_section(self):
-        """Crée la section Benchmark & Tests"""
-        section_frame = ttk.Frame(self.tools_paned)
-
-        # En-tête avec drag handle
-        header = self.create_draggable_header(section_frame, "📊 BENCHMARK & TESTS", 'benchmark')
-        header.pack(fill="x", padx=2, pady=2)
-
-        # Contenu avec hauteur fixe optimale
-        content_frame = ttk.Frame(section_frame, height=120)
-        content_frame.pack(fill="both", expand=True, padx=2)
-        content_frame.pack_propagate(False)
-
-        canvas = tk.Canvas(content_frame, bg=self.DARK_BG2, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(content_frame, orient="vertical", command=canvas.yview)
-        scrollable = ttk.Frame(canvas)
-
-        scrollable.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=scrollable, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-
-        # Sites benchmark et tests
-        benchmark_buttons = [
+        """Section Benchmark & Tests - 40+ outils"""
+        buttons_data = [
             ("⚡ UserBenchmark", "https://www.userbenchmark.com/"),
             ("📊 3DMark", "https://benchmarks.ul.com/3dmark"),
             ("💻 PCMark", "https://benchmarks.ul.com/pcmark10"),
@@ -1735,12 +1603,12 @@ class NiTriteGUIComplet:
             ("⚡ Cinebench", "https://www.maxon.net/en/cinebench"),
             ("📈 PassMark", "https://www.passmark.com/"),
             ("💾 CrystalDiskMark", "https://crystalmark.info/en/software/crystaldiskmark/"),
-            ("📊 AS SSD Benchmark", "https://www.alex-is.de/"),
-            ("⚡ ATTO Disk Benchmark", "https://www.atto.com/disk-benchmark/"),
+            ("📊 AS SSD Bench", "https://www.alex-is.de/"),
+            ("⚡ ATTO Disk Bench", "https://www.atto.com/disk-benchmark/"),
             ("🔍 HD Tune", "https://www.hdtune.com/"),
             ("📈 Unigine Heaven", "https://benchmark.unigine.com/heaven"),
             ("💻 Unigine Valley", "https://benchmark.unigine.com/valley"),
-            ("📊 Unigine Superposition", "https://benchmark.unigine.com/superposition"),
+            ("📊 Unigine Superpos.", "https://benchmark.unigine.com/superposition"),
             ("⚡ FurMark", "https://geeks3d.com/furmark/"),
             ("🔍 Prime95", "https://www.mersenne.org/download/"),
             ("📈 AIDA64", "https://www.aida64.com/"),
@@ -1750,261 +1618,352 @@ class NiTriteGUIComplet:
             ("🔍 Intel Burn Test", "https://www.techspot.com/downloads/4965-intel-burn-test.html"),
             ("📈 LinX", "https://www.techpowerup.com/download/linx/"),
             ("💻 Y-Cruncher", "http://www.numberworld.org/y-cruncher/"),
-            ("📊 Blender Benchmark", "https://opendata.blender.org/"),
-            ("⚡ V-Ray Benchmark", "https://www.chaos.com/vray/benchmark"),
+            ("📊 Blender Bench", "https://opendata.blender.org/"),
+            ("⚡ V-Ray Bench", "https://www.chaos.com/vray/benchmark"),
             ("🔍 Basemark GPU", "https://www.basemark.com/products/basemark-gpu/"),
             ("📈 GFXBench", "https://gfxbench.com/"),
             ("💾 ADATA SSD Toolbox", "https://www.adata.com/us/ss/software-5/"),
-            ("📊 Samsung Magician", "https://www.samsung.com/semiconductor/minisite/ssd/product/consumer/magician/"),
-            ("⚡ Western Digital Dashboard", "https://support.wdc.com/downloads.aspx?lang=en"),
-            ("🔍 Crucial Storage Executive", "https://www.crucial.com/support/storage-executive")
+            ("📦 Samsung Magician", "https://www.samsung.com/semiconductor/minisite/ssd/product/consumer/magician/"),
+            ("⚡ WD Dashboard", "https://support.wdc.com/downloads.aspx"),
+            ("🔍 Crucial SE", "https://www.crucial.com/support/storage-executive"),
+            ("📈 NovaBench", "https://novabench.com/"),
+            ("💻 CPU Monkey", "https://www.cpu-monkey.com/"),
+            ("📊 GPU Check", "https://www.gpucheck.com/"),
+            ("⚡ CPU-World", "http://www.cpu-world.com/"),
+            ("🔍 TechPowerUp", "https://www.techpowerup.com/"),
         ]
+        self.create_section("BENCHMARK & TESTS", "📊", buttons_data, is_web=True)
 
-        # Configuration 6 colonnes
-        for i in range(6):
-            scrollable.grid_columnconfigure(i, weight=1)
 
-        # Créer tous les boutons
-        for idx, (label, url) in enumerate(benchmark_buttons):
-            row = idx // 6
-            col = idx % 6
-            ttk.Button(
-                scrollable,
-                text=label,
-                command=lambda u=url: webbrowser.open(u)
-            ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
+    def create_utilitaires_systeme_section(self):
+        """Section Utilitaires Système Windows - 40+ outils"""
+        buttons_data = [
+            # PowerToys & Utilitaires Microsoft
+            ("⚡ PowerToys", "https://github.com/microsoft/PowerToys/releases"),
+            ("🔍 Everything", "https://www.voidtools.com/"),
+            ("👁️ QuickLook", "https://github.com/QL-Win/QuickLook/releases"),
+            ("📸 ShareX", "https://getsharex.com/"),
+            ("🎯 Greenshot", "https://getgreenshot.org/"),
+            ("📷 Lightshot", "https://app.prntscr.com/"),
 
-        self.section_widgets['benchmark'] = section_frame
+            # Compression
+            ("📦 7-Zip", "https://www.7-zip.org/"),
+            ("🗜️ WinRAR", "https://www.win-rar.com/"),
+            ("📦 PeaZip", "https://peazip.github.io/"),
+            ("🗜️ Bandizip", "https://www.bandisoft.com/bandizip/"),
 
+            # Éditeurs Texte
+            ("📝 Notepad++", "https://notepad-plus-plus.org/"),
+            ("⚡ Sublime Text", "https://www.sublimetext.com/"),
+            ("💻 VS Code", "https://code.visualstudio.com/"),
+            ("📝 Atom", "https://atom.io/"),
+            ("✍️ Typora", "https://typora.io/"),
+
+            # Automation
+            ("⚡ AutoHotkey", "https://www.autohotkey.com/"),
+            ("🎨 Rainmeter", "https://www.rainmeter.net/"),
+            ("🔧 WinAutomation", "https://www.winautomation.com/"),
+
+            # Gestionnaires Fichiers
+            ("📁 Total Commander", "https://www.ghisler.com/"),
+            ("🗂️ FreeCommander", "https://freecommander.com/"),
+            ("📂 XYplorer", "https://www.xyplorer.com/"),
+            ("🗃️ Directory Opus", "https://www.gpsoft.com.au/"),
+
+            # Utilities diverses
+            ("🖱️ X-Mouse Button", "https://www.highrez.co.uk/downloads/XMouseButtonControl.htm"),
+            ("⌨️ SharpKeys", "https://github.com/randyrants/sharpkeys/releases"),
+            ("🎯 WinDirStat", "https://windirstat.net/"),
+            ("📊 SpaceSniffer", "http://www.uderzo.it/main_products/space_sniffer/"),
+            ("🔍 Agent Ransack", "https://www.mythicsoft.com/agentransack/"),
+            ("🗂️ DropIt", "http://www.dropitproject.com/"),
+            ("⏰ f.lux", "https://justgetflux.com/"),
+            ("💡 Clover", "http://en.ejie.me/"),
+
+            # Lanceurs d'applications
+            ("🚀 Launchy", "https://www.launchy.net/"),
+            ("⚡ Wox", "http://www.wox.one/"),
+            ("🎯 Keypirinha", "https://keypirinha.com/"),
+
+            # Clipboard Managers
+            ("📋 Ditto", "https://ditto-cp.sourceforge.io/"),
+            ("📝 ClipClip", "https://clipclip.com/"),
+            ("⚡ CopyQ", "https://hluk.github.io/CopyQ/"),
+
+            # Window Management
+            ("🪟 FancyZones", "https://learn.microsoft.com/windows/powertoys/fancyzones"),
+            ("📐 AquaSnap", "https://www.nurgo-software.com/products/aquasnap"),
+            ("🎯 DisplayFusion", "https://www.displayfusion.com/"),
+        ]
+        self.create_section("UTILITAIRES SYSTÈME", "🛠️", buttons_data, is_web=True)
+
+    def create_multimedia_section(self):
+        """Section Multimédia & Création - 50+ logiciels"""
+        buttons_data = [
+            # Lecteurs Multimé dia
+            ("🎬 VLC Media Player", "https://www.videolan.org/vlc/"),
+            ("▶️ MPC-HC", "https://mpc-hc.org/"),
+            ("🎥 PotPlayer", "https://potplayer.daum.net/"),
+            ("📺 Kodi", "https://kodi.tv/"),
+            ("🎞️ MPV", "https://mpv.io/"),
+
+            # Montage Vidéo
+            ("🎬 OBS Studio", "https://obsproject.com/"),
+            ("📹 XSplit", "https://www.xsplit.com/"),
+            ("🎥 vMix", "https://www.vmix.com/"),
+            ("✂️ DaVinci Resolve", "https://www.blackmagicdesign.com/products/davinciresolve"),
+            ("🎞️ Kdenlive", "https://kdenlive.org/"),
+            ("📽️ OpenShot", "https://www.openshot.org/"),
+            ("🎬 Shotcut", "https://www.shotcut.org/"),
+            ("📹 HitFilm Express", "https://fxhome.com/hitfilm-express"),
+
+            # 3D & Modélisation
+            ("🎨 Blender", "https://www.blender.org/"),
+            ("🏗️ SketchUp", "https://www.sketchup.com/"),
+            ("📐 FreeCAD", "https://www.freecadweb.org/"),
+            ("🎯 Meshmixer", "https://www.meshmixer.com/"),
+
+            # Graphisme & Design
+            ("🎨 Inkscape", "https://inkscape.org/"),
+            ("🖌️ Krita", "https://krita.org/"),
+            ("🎨 GIMP", "https://www.gimp.org/"),
+            ("🖼️ Paint.NET", "https://www.getpaint.net/"),
+            ("📐 Figma", "https://www.figma.com/downloads/"),
+            ("🎯 Canva", "https://www.canva.com/"),
+
+            # Audio
+            ("🎵 Audacity", "https://www.audacityteam.org/"),
+            ("🎼 Reaper", "https://www.reaper.fm/"),
+            ("🎹 FL Studio", "https://www.image-line.com/fl-studio/"),
+            ("🎧 Ableton Live", "https://www.ableton.com/live/"),
+            ("🎚️ Ardour", "https://ardour.org/"),
+            ("🎵 Ocenaudio", "https://www.ocenaudio.com/"),
+
+            # DJ & Mix
+            ("🎧 VirtualDJ", "https://www.virtualdj.com/"),
+            ("🎛️ Traktor", "https://www.native-instruments.com/traktor/"),
+            ("🎵 Serato DJ", "https://serato.com/"),
+            ("🎚️ Mixxx", "https://www.mixxx.org/"),
+
+            # Conversion & Encodage
+            ("🔄 HandBrake", "https://handbrake.fr/"),
+            ("⚡ FFmpeg", "https://ffmpeg.org/"),
+            ("🎬 Format Factory", "http://www.pcfreetime.com/formatfactory/"),
+            ("📹 MediaCoder", "https://www.mediacoderhq.com/"),
+            ("🎞️ MKVToolNix", "https://mkvtoolnix.download/"),
+
+            # Streaming
+            ("📡 Streamlabs OBS", "https://streamlabs.com/"),
+            ("🎥 Restream", "https://restream.io/"),
+            ("📹 vMix", "https://www.vmix.com/"),
+
+            # Photo
+            ("📷 Darktable", "https://www.darktable.org/"),
+            ("🖼️ RawTherapee", "https://www.rawtherapee.com/"),
+            ("📸 digiKam", "https://www.digikam.org/"),
+            ("🎨 Photopea", "https://www.photopea.com/"),
+
+            # Utilitaires Média
+            ("🎵 MusicBee", "https://getmusicbee.com/"),
+            ("📻 Spotify", "https://www.spotify.com/download/"),
+            ("🎼 foobar2000", "https://www.foobar2000.org/"),
+        ]
+        self.create_section("MULTIMÉDIA & CRÉATION", "🎬", buttons_data, is_web=True)
+
+    def create_bureautique_section(self):
+        """Section Bureautique & Productivité - 40+ outils"""
+        buttons_data = [
+            # Suite Office
+            ("📦 LibreOffice", "https://www.libreoffice.org/"),
+            ("📄 OpenOffice", "https://www.openoffice.org/"),
+            ("☁️ Google Workspace", "https://workspace.google.com/"),
+            ("📊 OnlyOffice", "https://www.onlyoffice.com/"),
+            ("📝 WPS Office", "https://www.wps.com/"),
+
+            # Notes & PKM
+            ("📓 Notion", "https://www.notion.so/"),
+            ("🗒️ Obsidian", "https://obsidian.md/"),
+            ("📔 OneNote", "https://www.onenote.com/"),
+            ("📝 Evernote", "https://evernote.com/"),
+            ("🗂️ Joplin", "https://joplinapp.org/"),
+            ("✍️ Typora", "https://typora.io/"),
+            ("📓 Logseq", "https://logseq.com/"),
+
+            # Todo & Task Management
+            ("✅ Todoist", "https://todoist.com/"),
+            ("📋 TickTick", "https://ticktick.com/"),
+            ("✔️ Any.do", "https://www.any.do/"),
+            ("📝 Microsoft To Do", "https://to-do.microsoft.com/"),
+            ("🎯 Trello", "https://trello.com/"),
+            ("📊 Asana", "https://asana.com/"),
+            ("🗂️ Monday.com", "https://monday.com/"),
+
+            # Time Tracking
+            ("⏱️ Toggl Track", "https://toggl.com/track/"),
+            ("⏰ RescueTime", "https://www.rescuetime.com/"),
+            ("🕐 Clockify", "https://clockify.me/"),
+            ("⏲️ Harvest", "https://www.getharvest.com/"),
+
+            # Communication
+            ("💬 Slack", "https://slack.com/downloads/"),
+            ("👥 Microsoft Teams", "https://www.microsoft.com/teams/"),
+            ("📹 Zoom", "https://zoom.us/download"),
+            ("🎥 Google Meet", "https://meet.google.com/"),
+            ("📞 Webex", "https://www.webex.com/downloads.html"),
+            ("💬 Discord", "https://discord.com/download"),
+            ("🗨️ Mattermost", "https://mattermost.com/"),
+            ("🚀 Rocket.Chat", "https://rocket.chat/"),
+
+            # PDF
+            ("📄 PDF24", "https://tools.pdf24.org/"),
+            ("📋 PDFtk", "https://www.pdflabs.com/tools/pdftk-the-pdf-toolkit/"),
+            ("📝 PDF-XChange", "https://www.tracker-software.com/product/pdf-xchange-editor"),
+            ("📄 Foxit Reader", "https://www.foxit.com/pdf-reader/"),
+            ("📋 Sumatra PDF", "https://www.sumatrapdfreader.org/"),
+
+            # Calendrier
+            ("📅 Google Calendar", "https://calendar.google.com/"),
+            ("📆 Outlook", "https://outlook.com/"),
+            ("🗓️ Thunderbird", "https://www.thunderbird.net/"),
+
+            # Mind Mapping
+            ("🧠 XMind", "https://www.xmind.net/"),
+            ("🗺️ FreeMind", "http://freemind.sourceforge.net/"),
+            ("💭 MindMeister", "https://www.mindmeister.com/"),
+        ]
+        self.create_section("BUREAUTIQUE & PRODUCTIVITÉ", "📄", buttons_data, is_web=True)
+
+    def create_developpement_web_section(self):
+        """Section Développement Web & Programming - 40+ outils"""
+        buttons_data = [
+            # IDEs & Editeurs
+            ("💻 VS Code", "https://code.visualstudio.com/"),
+            ("⚡ Sublime Text", "https://www.sublimetext.com/"),
+            ("🎯 Atom", "https://atom.io/"),
+            ("📝 Notepad++", "https://notepad-plus-plus.org/"),
+            ("🔧 WebStorm", "https://www.jetbrains.com/webstorm/"),
+            ("💼 PhpStorm", "https://www.jetbrains.com/phpstorm/"),
+            ("🎨 PyCharm", "https://www.jetbrains.com/pycharm/"),
+            ("☕ IntelliJ IDEA", "https://www.jetbrains.com/idea/"),
+
+            # Git & Version Control
+            ("🐙 GitHub Desktop", "https://desktop.github.com/"),
+            ("🦊 GitKraken", "https://www.gitkraken.com/"),
+            ("🌿 SourceTree", "https://www.sourcetreeapp.com/"),
+            ("🔧 TortoiseGit", "https://tortoisegit.org/"),
+
+            # Serveurs Locaux
+            ("📦 XAMPP", "https://www.apachefriends.org/"),
+            ("⚡ WAMP", "https://www.wampserver.com/"),
+            ("🎯 Laragon", "https://laragon.org/"),
+            ("💼 MAMP", "https://www.mamp.info/"),
+
+            # Bases de Données
+            ("🐬 MySQL Workbench", "https://www.mysql.com/products/workbench/"),
+            ("🐘 pgAdmin", "https://www.pgadmin.org/"),
+            ("📊 DBeaver", "https://dbeaver.io/"),
+            ("💾 HeidiSQL", "https://www.heidisql.com/"),
+
+            # API Testing
+            ("📡 Postman", "https://www.postman.com/downloads/"),
+            ("⚡ Insomnia", "https://insomnia.rest/"),
+            ("🔧 Hoppscotch", "https://hoppscotch.io/"),
+            ("📋 Thunder Client", "https://www.thunderclient.com/"),
+
+            # Docker & Containers
+            ("🐳 Docker Desktop", "https://www.docker.com/products/docker-desktop"),
+            ("☸️ Kubernetes", "https://kubernetes.io/"),
+            ("📦 Podman", "https://podman.io/"),
+
+            # Terminal
+            ("💻 Windows Terminal", "https://apps.microsoft.com/detail/9N0DX20HK701"),
+            ("⚡ Cmder", "https://cmder.app/"),
+            ("🔧 ConEmu", "https://conemu.github.io/"),
+            ("🎯 Hyper", "https://hyper.is/"),
+
+            # FTP/SFTP
+            ("📁 FileZilla", "https://filezilla-project.org/"),
+            ("🌐 WinSCP", "https://winscp.net/"),
+            ("📦 Cyberduck", "https://cyberduck.io/"),
+
+            # Node.js & Package Managers
+            ("🟢 Node.js", "https://nodejs.org/"),
+            ("📦 npm", "https://www.npmjs.com/"),
+            ("⚡ Yarn", "https://yarnpkg.com/"),
+            ("🎯 pnpm", "https://pnpm.io/"),
+
+            # Python
+            ("🐍 Python", "https://www.python.org/downloads/"),
+            ("📦 Anaconda", "https://www.anaconda.com/products/distribution"),
+            ("🎯 PyPI", "https://pypi.org/"),
+
+            # Documentation
+            ("📚 DevDocs", "https://devdocs.io/"),
+            ("💡 MDN Web Docs", "https://developer.mozilla.org/"),
+            ("📖 W3Schools", "https://www.w3schools.com/"),
+            ("🔍 Stack Overflow", "https://stackoverflow.com/"),
+        ]
+        self.create_section("DÉVELOPPEMENT WEB", "💻", buttons_data, is_web=True)
     def create_depannage_section(self):
-        """Crée la section Dépannage à Distance"""
-        section_frame = ttk.Frame(self.tools_paned)
-
-        # En-tête avec drag handle
-        header = self.create_draggable_header(section_frame, "🖥️ DÉPANNAGE À DISTANCE", 'depannage')
-        header.pack(fill="x", padx=2, pady=2)
-
-        # Contenu avec hauteur fixe optimale
-        content_frame = ttk.Frame(section_frame, height=120)
-        content_frame.pack(fill="both", expand=True, padx=2)
-        content_frame.pack_propagate(False)
-
-        canvas = tk.Canvas(content_frame, bg=self.DARK_BG2, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(content_frame, orient="vertical", command=canvas.yview)
-        scrollable = ttk.Frame(canvas)
-
-        scrollable.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=scrollable, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-
-        # Sites dépannage à distance
-        depannage_buttons = [
-            ("🖥️ TeamViewer", "https://www.teamviewer.com/fr/"),
-            ("💻 AnyDesk", "https://anydesk.com/fr"),
-            ("📡 Chrome Remote Desktop", "https://remotedesktop.google.com/"),
-            ("🔧 RustDesk", "https://rustdesk.com/"),
-            ("⚡ TightVNC", "https://www.tightvnc.com/"),
-            ("🌐 UltraVNC", "https://uvnc.com/"),
-            ("💼 Splashtop", "https://www.splashtop.com/"),
-            ("📊 LogMeIn", "https://www.logmein.com/"),
-            ("🔍 Zoho Assist", "https://www.zoho.com/assist/"),
-            ("⚡ RemotePC", "https://www.remotepc.com/"),
-            ("🖥️ Ammyy Admin", "https://www.ammyy.com/"),
-            ("💻 ShowMyPC", "https://showmypc.com/"),
-            ("📡 DWService", "https://www.dwservice.net/"),
-            ("🔧 NoMachine", "https://www.nomachine.com/"),
-            ("⚡ VNC Connect", "https://www.realvnc.com/fr/connect/download/viewer/"),
-            ("🌐 Mikogo", "https://www.mikogo.com/"),
-            ("💼 GoToMyPC", "https://www.gotomypc.com/"),
-            ("📊 Connectwise Control", "https://control.connectwise.com/"),
-            ("🔍 Supremo", "https://www.supremocontrol.com/"),
-            ("⚡ LiteManager", "https://www.litemanager.com/"),
-            ("🖥️ Microsoft Quick Assist", "ms-quick-assist:"),
-            ("💻 Windows Remote Desktop", "mstsc")
+        """Section Dépannage à Distance"""
+        buttons_data = [
+            ("💻 TeamViewer", "https://www.teamviewer.com/"),
+            ("🖥️ AnyDesk", "https://anydesk.com/"),
+            ("🌐 Chrome Remote", "https://remotedesktop.google.com/"),
+            ("⚡ RustDesk", "https://rustdesk.com/"),
+            ("🔧 TightVNC", "https://www.tightvnc.com/"),
+            ("💼 UltraVNC", "https://uvnc.com/"),
+            ("🎯 RealVNC", "https://www.realvnc.com/"),
+            ("📡 Ammyy Admin", "https://www.ammyy.com/"),
+            ("🌐 Splashtop", "https://www.splashtop.com/"),
+            ("⚡ Parsec", "https://parsec.app/"),
+            ("🔧 Moonlight", "https://moonlight-stream.org/"),
+            ("💻 Remmina", "https://remmina.org/"),
+            ("🖥️ NoMachine", "https://www.nomachine.com/"),
+            ("📦 Supremo", "https://www.supremocontrol.com/"),
         ]
-
-        # Configuration 6 colonnes
-        for i in range(6):
-            scrollable.grid_columnconfigure(i, weight=1)
-
-        # Créer tous les boutons
-        for idx, (label, cmd_or_url) in enumerate(depannage_buttons):
-            row = idx // 6
-            col = idx % 6
-            if cmd_or_url.startswith('http') or cmd_or_url.startswith('ms-'):
-                ttk.Button(
-                    scrollable,
-                    text=label,
-                    command=lambda u=cmd_or_url: webbrowser.open(u)
-                ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
-            else:
-                ttk.Button(
-                    scrollable,
-                    text=label,
-                    command=lambda c=cmd_or_url: self.execute_quick_command(c, False)
-                ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
-
-        self.section_widgets['depannage'] = section_frame
+        self.create_section("DÉPANNAGE À DISTANCE", "🖥️", buttons_data, is_web=True)
 
     def create_drivers_section(self):
-        """Crée la section Drivers & Pilotes"""
-        section_frame = ttk.Frame(self.tools_paned)
-
-        # En-tête avec drag handle
-        header = self.create_draggable_header(section_frame, "💿 DRIVERS & PILOTES", 'drivers')
-        header.pack(fill="x", padx=2, pady=2)
-
-        # Contenu avec hauteur fixe optimale
-        content_frame = ttk.Frame(section_frame, height=120)
-        content_frame.pack(fill="both", expand=True, padx=2)
-        content_frame.pack_propagate(False)
-
-        canvas = tk.Canvas(content_frame, bg=self.DARK_BG2, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(content_frame, orient="vertical", command=canvas.yview)
-        scrollable = ttk.Frame(canvas)
-
-        scrollable.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=scrollable, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-
-        # Sites drivers et pilotes
-        drivers_buttons = [
-            ("🎮 NVIDIA Drivers", "https://www.nvidia.com/Download/index.aspx"),
-            ("🔴 AMD Drivers", "https://www.amd.com/en/support"),
-            ("💻 Intel Drivers", "https://www.intel.com/content/www/us/en/download-center/home.html"),
-            ("🖨️ HP Support", "https://support.hp.com/drivers"),
-            ("💼 Dell Drivers", "https://www.dell.com/support/home/"),
-            ("📱 Lenovo Support", "https://support.lenovo.com/"),
-            ("🔧 ASUS Support", "https://www.asus.com/support/Download-Center/"),
-            ("⚡ MSI Support", "https://www.msi.com/support/download"),
-            ("🌐 Gigabyte Support", "https://www.gigabyte.com/Support"),
-            ("💾 Samsung Support", "https://www.samsung.com/us/support/downloads/"),
-            ("📊 Realtek", "https://www.realtek.com/en/downloads"),
-            ("🔊 Creative Labs", "https://support.creative.com/"),
-            ("🎵 Sound Blaster", "https://support.creative.com/products/soundblaster/"),
-            ("📡 TP-Link", "https://www.tp-link.com/support/download/"),
-            ("🌐 Netgear", "https://www.netgear.com/support/download/"),
-            ("⚡ D-Link", "https://www.dlink.com/support/"),
-            ("🖥️ Canon Drivers", "https://www.canon.com/support/"),
-            ("🖨️ Epson Support", "https://epson.com/Support/sl/s"),
-            ("📄 Brother Support", "https://support.brother.com/"),
-            ("💼 Xerox Drivers", "https://www.xerox.com/downloads"),
-            ("🔧 Logitech Support", "https://support.logi.com/"),
-            ("🖱️ Razer Support", "https://support.razer.com/"),
-            ("⌨️ Corsair Support", "https://www.corsair.com/support"),
-            ("🎮 SteelSeries", "https://steelseries.com/downloads"),
-            ("📱 Western Digital", "https://support.wdc.com/downloads.aspx"),
-            ("💾 Seagate Support", "https://www.seagate.com/support/downloads/"),
-            ("🔊 Focusrite", "https://focusrite.com/downloads"),
-            ("🎵 Behringer", "https://www.behringer.com/downloads.html"),
-            ("📡 DriverPack", "https://drp.su/"),
-            ("🔍 Snappy Driver Installer", "https://sdi-tool.org/"),
+        """Section Drivers & Pilotes"""
+        buttons_data = [
+            ("🔧 Snappy Driver", "https://www.snappy-driver-installer.org/"),
             ("⚡ Driver Booster", "https://www.iobit.com/driver-booster.php"),
-            ("💻 DriverEasy", "https://www.drivereasy.com/"),
-            ("🔧 Driver Genius", "https://www.driver-soft.com/"),
-            ("🌐 SlimDrivers", "https://www.slimwareutilities.com/slimdrivers.php")
+            ("💻 Driver Easy", "https://www.drivereasy.com/"),
+            ("🎯 DriverPack", "https://drp.su/"),
+            ("🔍 Driver Genius", "https://www.driver-soft.com/"),
+            ("📦 NVIDIA Drivers", "https://www.nvidia.com/download/index.aspx"),
+            ("🔴 AMD Drivers", "https://www.amd.com/support"),
+            ("🎯 Intel Drivers", "https://www.intel.com/content/www/us/en/download-center/home.html"),
+            ("💻 Dell Drivers", "https://www.dell.com/support/home/"),
+            ("🖥️ HP Drivers", "https://support.hp.com/drivers"),
+            ("📱 Lenovo Drivers", "https://support.lenovo.com/solutions/ht003029"),
+            ("🎮 ASUS Drivers", "https://www.asus.com/support/download-center/"),
+            ("⚡ MSI Drivers", "https://www.msi.com/support/download"),
+            ("🔧 Realtek Drivers", "https://www.realtek.com/downloads/"),
         ]
-
-        # Configuration 6 colonnes
-        for i in range(6):
-            scrollable.grid_columnconfigure(i, weight=1)
-
-        # Créer tous les boutons
-        for idx, (label, url) in enumerate(drivers_buttons):
-            row = idx // 6
-            col = idx % 6
-            ttk.Button(
-                scrollable,
-                text=label,
-                command=lambda u=url: webbrowser.open(u)
-            ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
-
-        self.section_widgets['drivers'] = section_frame
+        self.create_section("DRIVERS & PILOTES", "🔌", buttons_data, is_web=True)
 
     def create_documentation_section(self):
-        """Crée la section Documentation Technique"""
-        section_frame = ttk.Frame(self.tools_paned)
-
-        # En-tête avec drag handle
-        header = self.create_draggable_header(section_frame, "📚 DOCUMENTATION TECHNIQUE", 'documentation')
-        header.pack(fill="x", padx=2, pady=2)
-
-        # Contenu avec hauteur fixe optimale
-        content_frame = ttk.Frame(section_frame, height=120)
-        content_frame.pack(fill="both", expand=True, padx=2)
-        content_frame.pack_propagate(False)
-
-        canvas = tk.Canvas(content_frame, bg=self.DARK_BG2, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(content_frame, orient="vertical", command=canvas.yview)
-        scrollable = ttk.Frame(canvas)
-
-        scrollable.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=scrollable, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-
-        # Sites documentation technique
-        documentation_buttons = [
-            ("📖 Microsoft Docs", "https://docs.microsoft.com/"),
-            ("💻 TechNet", "https://technet.microsoft.com/"),
-            ("🔧 Tom's Hardware", "https://www.tomshardware.com/"),
-            ("⚡ AnandTech", "https://www.anandtech.com/"),
-            ("📊 PCPartPicker", "https://pcpartpicker.com/"),
-            ("🌐 Stack Overflow", "https://stackoverflow.com/"),
-            ("💼 Super User", "https://superuser.com/"),
-            ("🔍 Reddit r/techsupport", "https://www.reddit.com/r/techsupport/"),
-            ("📈 Reddit r/buildapc", "https://www.reddit.com/r/buildapc/"),
-            ("💾 NotebookCheck", "https://www.notebookcheck.net/"),
-            ("🖥️ LaptopMag", "https://www.laptopmag.com/"),
-            ("🔧 iFixit", "https://www.ifixit.com/"),
-            ("⚡ LinusTechTips Forum", "https://linustechtips.com/"),
-            ("📚 Wikiwand Tech", "https://www.wikiwand.com/"),
-            ("💻 Wikipedia Tech", "https://en.wikipedia.org/wiki/Portal:Technology"),
-            ("🌐 GitHub", "https://github.com/"),
-            ("🔍 GitLab", "https://gitlab.com/"),
-            ("📊 BitBucket", "https://bitbucket.org/"),
-            ("⚡ DevDocs", "https://devdocs.io/"),
-            ("💼 W3Schools", "https://www.w3schools.com/"),
-            ("🔧 MDN Web Docs", "https://developer.mozilla.org/"),
-            ("📈 Can I Use", "https://caniuse.com/"),
-            ("💾 Regex101", "https://regex101.com/"),
-            ("🖥️ Ninite", "https://ninite.com/"),
-            ("🔍 AlternativeTo", "https://alternativeto.net/"),
-            ("⚡ FileHippo", "https://filehippo.com/"),
-            ("📚 Softpedia", "https://www.softpedia.com/"),
-            ("💻 FileHorse", "https://www.filehorse.com/"),
-            ("🌐 SourceForge", "https://sourceforge.net/"),
-            ("🔧 Chocolatey", "https://chocolatey.org/"),
-            ("⚡ WingetUI", "https://www.marticliment.com/wingetui/"),
-            ("📊 PCGamingWiki", "https://www.pcgamingwiki.com/"),
-            ("💼 ProtonDB", "https://www.protondb.com/"),
-            ("🔍 ArchWiki", "https://wiki.archlinux.org/")
+        """Section Documentation & Aide"""
+        buttons_data = [
+            ("📚 Microsoft Docs", "https://learn.microsoft.com/"),
+            ("💻 Windows Tips", "https://support.microsoft.com/windows"),
+            ("🔧 Sysinternals", "https://learn.microsoft.com/sysinternals/"),
+            ("📖 SS64 CMD", "https://ss64.com/nt/"),
+            ("⚡ PowerShell Docs", "https://learn.microsoft.com/powershell/"),
+            ("🌐 TechNet", "https://technet.microsoft.com/"),
+            ("📚 How-To Geek", "https://www.howtogeek.com/"),
+            ("💡 Tom's Hardware", "https://www.tomshardware.com/"),
+            ("🔍 Stack Overflow", "https://stackoverflow.com/"),
+            ("📖 Reddit r/techsupport", "https://www.reddit.com/r/techsupport/"),
+            ("💻 Bleeping Computer", "https://www.bleepingcomputer.com/"),
+            ("🔧 Ninite", "https://ninite.com/"),
+            ("📚 AlternativeTo", "https://alternativeto.net/"),
+            ("💡 CNET Download", "https://download.cnet.com/"),
+            ("🌐 PortableApps", "https://portableapps.com/"),
         ]
-
-        # Configuration 6 colonnes
-        for i in range(6):
-            scrollable.grid_columnconfigure(i, weight=1)
-
-        # Créer tous les boutons
-        for idx, (label, url) in enumerate(documentation_buttons):
-            row = idx // 6
-            col = idx % 6
-            ttk.Button(
-                scrollable,
-                text=label,
-                command=lambda u=url: webbrowser.open(u)
-            ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
-
-        self.section_widgets['documentation'] = section_frame
-
+        self.create_section("DOCUMENTATION & AIDE", "📚", buttons_data, is_web=True)
     def create_draggable_header(self, parent, title, section_name):
         """Crée un en-tête draggable pour réorganiser les sections"""
         header = tk.Frame(parent, bg=self.ACCENT_BLUE, cursor="hand2", height=30)  # Bleu foncé Ordi Plus
