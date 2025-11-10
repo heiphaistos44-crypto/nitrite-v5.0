@@ -45,6 +45,8 @@ class NiTriteGUIComplet:
     ACCENT_GREEN_LIGHT = '#33eb8f' # Vert clair
     ACCENT_GREEN_DARK = '#00b359'  # Vert foncé
 
+    ACCENT_APPLE_GREEN = '#7CFC00'  # Vert pomme - Titre
+
     ACCENT_RED = '#ff1744'       # Rouge vif - Erreur
     ACCENT_YELLOW = '#ffd600'    # Jaune or - Warning
     ACCENT_PURPLE = '#7c4dff'    # Violet - Premium
@@ -343,11 +345,11 @@ class NiTriteGUIComplet:
                  ])
 
         # ═══════════════════════════════════════════════════════════
-        # 🛠️ BOUTONS PANNEAU D'OUTILS - COMPACT
+        # 🛠️ BOUTONS PANNEAU D'OUTILS - Taille optimisée
         # ═══════════════════════════════════════════════════════════
         style.configure('ToolPanel.TButton',
-                       font=('Segoe UI', 7),
-                       padding=(4, 2),
+                       font=('Segoe UI', 9),
+                       padding=(6, 3),
                        background=self.DARK_BG3,
                        foreground=self.DARK_FG,
                        borderwidth=1,
@@ -446,16 +448,32 @@ class NiTriteGUIComplet:
         total_programs = sum(len(progs) if isinstance(progs, dict) else 0
                            for progs in self.programs.values())
 
-        # 🎯 Titre principal - V12.0
-        title_label = tk.Label(
-            header_outer,
-            text="NiTriTe V12.0",
-            font=('Segoe UI', 28, 'bold'),
-            fg=self.ACCENT_ORANGE,
-            bg=self.DARK_BG2,
-            pady=12
-        )
-        title_label.pack()
+        # 🎯 Titre principal - V12.0 avec lettres colorées
+        title_frame = tk.Frame(header_outer, bg=self.DARK_BG2, pady=12)
+        title_frame.pack()
+
+        # Créer le titre avec N, T, T, e, V en vert pomme
+        title_parts = [
+            ('N', self.ACCENT_APPLE_GREEN),
+            ('i', self.ACCENT_ORANGE),
+            ('T', self.ACCENT_APPLE_GREEN),
+            ('ri', self.ACCENT_ORANGE),
+            ('T', self.ACCENT_APPLE_GREEN),
+            ('e', self.ACCENT_APPLE_GREEN),
+            (' ', self.ACCENT_ORANGE),
+            ('V', self.ACCENT_APPLE_GREEN),
+            ('12.0', self.ACCENT_ORANGE)
+        ]
+
+        for text, color in title_parts:
+            label = tk.Label(
+                title_frame,
+                text=text,
+                font=('Segoe UI', 28, 'bold'),
+                fg=color,
+                bg=self.DARK_BG2
+            )
+            label.pack(side='left')
 
         # Badge compteur avec applications + boutons
         # Note: Le compteur de boutons sera initialisé après la création du panneau
