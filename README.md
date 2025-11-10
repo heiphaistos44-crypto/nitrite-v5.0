@@ -1,13 +1,15 @@
-# 🚀 NiTriTe v12 Final - Installateur Automatique Ultra-Moderne
+# 🚀 NiTriTe V12.0 - Installateur Automatique Ultra-Moderne
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-v12_Final-orange.svg)
+![Version](https://img.shields.io/badge/version-V12.0-orange.svg)
 ![Python](https://img.shields.io/badge/python-3.8+-blue.svg)
 ![Windows](https://img.shields.io/badge/platform-Windows_10/11-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
+![Applications](https://img.shields.io/badge/applications-715-green.svg)
+![Outils](https://img.shields.io/badge/outils-553_boutons-blue.svg)
 
-**Installation automatique de 80+ applications Windows via une interface graphique moderne et esthétique**
+**Installation automatique de 715 applications Windows + 553 outils via une interface graphique ultra-moderne**
 
 [🎯 Démarrage Rapide](#-démarrage-rapide) • [✨ Fonctionnalités](#-fonctionnalités) • [📦 Build Portable](#-build-portable) • [📚 Documentation](#-documentation)
 
@@ -34,12 +36,13 @@
 
 ## 🎯 À Propos
 
-**NiTriTe v12 Final** est un installateur automatique d'applications Windows avec une interface graphique ultra-moderne. Il permet d'installer rapidement et silencieusement plus de 80 applications depuis leurs sources officielles.
+**NiTriTe V12.0** est un installateur automatique d'applications Windows avec une interface graphique ultra-moderne. Il permet d'installer rapidement et silencieusement 715 applications depuis leurs sources officielles, avec 553 outils système intégrés.
 
 ### 🌟 Points Forts
 
-- ✅ **Interface Moderne** : Design sombre premium avec effets visuels
-- ✅ **80+ Applications** : Navigateurs, bureautique, multimédia, développement, etc.
+- ✅ **Interface Moderne** : Design sombre premium avec titre multicolore vert pomme
+- ✅ **715 Applications** : Navigateurs, bureautique, multimédia, développement, etc.
+- ✅ **553 Outils Système** : Panneau d'outils avec accès rapide aux fonctions Windows
 - ✅ **Installation Silencieuse** : Aucune intervention manuelle requise
 - ✅ **Sources Officielles** : Téléchargement direct depuis les éditeurs
 - ✅ **Mode Portable** : Exécutable autonome sans dépendances
@@ -50,36 +53,41 @@
 
 ## 🖼️ Captures d'Écran
 
-### Interface Principale - Design Moderne
+### Interface Principale - Design Moderne V12.0
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  🚀 NiTriTe v12 Final - INTERFACE MODERNE                      │
-│  ⭐ 80+ APPLICATIONS DISPONIBLES ⭐                            │
+│  🚀 NiTriTe V12.0 (Titre multicolore vert pomme)              │
+│  ⭐ 715 Applications  •  🛠️ 553 Boutons Utiles                │
 │  ✨ Installation Silencieuse • Sources Officielles • Premium   │
 ├─────────────────────────────────────────────────────────────────┤
-│  📋 0 / 80 programmes sélectionnés                             │
+│  📋 0 / 715 programmes sélectionnés                            │
 │  ████████████████ 0%                                            │
 │  🔄 ORGANISER  ➕ AJOUTER  🚀 INSTALLER                        │
 ├─────────────────────────────────────────────────────────────────┤
-│  ▼  🛠️  OUTILS ORDIPLUS  •  12 programmes                     │
+│  ▼  🛠️  OUTILS ORDIPLUS  •  10 programmes                     │
 │  ├─ • NiTriTe (Programme actuel)                               │
 │  ├─ • DiagPC                                                   │
 │  └─ • Formation OrdiPlus                                       │
 │                                                                 │
-│  ▼  🌐  NAVIGATEURS  •  8 programmes                           │
+│  ▼  🌐  NAVIGATEURS  •  31 programmes                          │
 │  ├─ • Google Chrome                                            │
 │  ├─ • Mozilla Firefox                                          │
 │  ├─ • Microsoft Edge                                           │
-│  └─ • Brave Browser                                            │
+│  └─ • Brave Browser... (+27 autres)                           │
+│                                                                 │
+│  🛠️ PANNEAU D'OUTILS (droite)                                 │
+│  ├─ 18 sections personnalisables                               │
+│  └─ 553 boutons d'accès rapide                                │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### Thème Sombre Premium
-- 🎨 Palette de couleurs moderne avec accents vibrants
-- 🔵 Points bleus minimalistes pour les liens web
+### Thème Sombre Premium V12.0
+- 🎨 **Titre Multicolore** : Lettres N, T, T, e, V en vert pomme (#7CFC00)
+- 🔵 Points bleus minimalistes (16pt) pour les liens web
 - 🟠 Boutons orange avec relief 3D
-- 🟢 Badges verts pour les succès
+- 🟢 Badges verts et bleus pour les statistiques
 - 💫 Transitions fluides et animations subtiles
+- 🛠️ Boutons outils optimisés (9pt) adaptés au texte
 
 ---
 
@@ -95,11 +103,12 @@
 - **Compteur Dynamique** : Couleurs et icônes changeantes selon la sélection
 
 ### 📦 Gestion des Applications
-- **80+ Programmes** répartis en 11 catégories
+- **715 Programmes** répartis en 25 catégories
+- **553 Outils Système** organisés en 18 sections personnalisables
 - **Installation WinGet** : Utilise le gestionnaire de paquets Windows
 - **Sources Officielles** : Téléchargement direct depuis les éditeurs
 - **Sélection Multiple** : Par catégorie ou individuellement
-- **Points de Redirection** : Liens vers les pages de téléchargement officielles
+- **Points de Redirection** : Liens vers les pages de téléchargement officielles (16pt, bleu)
 
 ### ⚡ Performance
 - **Multi-Threading** : Installations parallèles
@@ -198,7 +207,7 @@ nitrite-v5.0/
 │   └── url_updater.py                 # Mise à jour URLs
 │
 ├── 📂 data/                           # Données
-│   ├── programs.json                  # Base de 80+ applications
+│   ├── programs.json                  # Base de 715 applications (25 catégories)
 │   └── config.json                    # Configuration utilisateur
 │
 ├── 📂 scripts/                        # Scripts utilitaires
@@ -384,13 +393,15 @@ python scripts/tests/validation_finale.py
 
 ---
 
-## 📊 Statistiques
+## 📊 Statistiques V12.0
 
-- **80+ programmes** disponibles
-- **11 catégories** organisées
+- **715 programmes** disponibles
+- **25 catégories** organisées
+- **553 outils système** en 18 sections
 - **1 popup UAC** seulement
 - **~90% réduction** des interruptions UAC
-- **Interface moderne** avec design premium
+- **Interface V12.0** avec titre multicolore vert pomme
+- **Boutons optimisés** adaptés au contenu (9pt)
 - **Multi-threading** pour rapidité
 - **Sources officielles** uniquement
 
