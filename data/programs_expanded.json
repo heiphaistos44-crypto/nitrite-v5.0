@@ -2366,16 +2366,13 @@
     "Désinstallateurs Antivirus": {
         "AVAST Uninstall Utility": {
             "description": "Outil officiel pour désinstaller complètement Avast",
-            "download_url": "https://files.avast.com/iavs9x/avastclear.exe",
+            "download_url": "",
             "category": "Désinstallateurs Antivirus",
             "essential": false,
             "is_portable": true,
             "note": "Télécharger l'outil puis l'exécuter",
             "admin_required": true,
-            "winget_id": "Avast.Avast",
-            "install_args": "portable",
-            "portable": true,
-            "cleanup_folder": "Outils de nettoyage"
+            "winget_id": "Avast.Avast"
         },
         "AVG Remover": {
             "description": "Désinstalleur AVG AntiVirus",
@@ -2403,15 +2400,12 @@
         },
         "Norton Remove and Reinstall Tool": {
             "description": "Outil officiel pour désinstaller complètement Norton",
-            "download_url": "https://support.norton.com/sp/static/external/tools/nrnr.exe",
+            "download_url": "",
             "category": "Désinstallateurs Antivirus",
             "essential": false,
             "is_portable": true,
             "note": "Norton Removal Tool - Désinstallation complète",
-            "winget_id": "NortonLifeLock.NortonRemoveAndReinstall",
-            "install_args": "portable",
-            "portable": true,
-            "cleanup_folder": "Outils de nettoyage"
+            "winget_id": "NortonLifeLock.NortonRemoveAndReinstall"
         },
         "ESET Uninstaller": {
             "description": "Outil de désinstallation ESET",

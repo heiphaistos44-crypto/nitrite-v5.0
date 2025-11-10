@@ -16,13 +16,15 @@ from pathlib import Path
 import logging
 from urllib.parse import urlparse
 import hashlib
+import ctypes
+from ctypes import wintypes
 
 # Import conditionnel pour requests
 try:
     import requests
 except ImportError:
     requests = None
-    # Pas de print avec emojis pour éviter les erreurs d'encodage
+    logging.warning("Module 'requests' non disponible - certaines fonctionnalités seront limitées")
 
 # Import conditionnel pour winreg
 try:
@@ -55,9 +57,31 @@ except ImportError:
     except ImportError:
         PortableDatabase = None
 
+def get_windows_folder_path(csidl):
+    """
+    Obtient le chemin d'un dossier Windows spécial via SHGetFolderPath.
+    CSIDL_DESKTOP = 0 (Bureau)
+    CSIDL_PROGRAMS = 2 (Menu Démarrer\Programmes)
+    """
+    try:
+        buf = ctypes.create_unicode_buffer(wintypes.MAX_PATH)
+        result = ctypes.windll.shell32.SHGetFolderPathW(None, csidl, None, 0, buf)
+        if result == 0:
+            return Path(buf.value)
+    except Exception as e:
+        logging.warning(f"Impossible d'obtenir le chemin du dossier Windows (CSIDL {csidl}): {e}")
+
+    # Fallback
+    return Path.home() / 'Desktop'
+
+def get_desktop_path():
+    """Obtient le vrai chemin du Bureau Windows, quelle que soit la langue."""
+    CSIDL_DESKTOP = 0
+    return get_windows_folder_path(CSIDL_DESKTOP)
+
 class InstallerManager:
     """Gestionnaire des installations de programmes"""
-    
+
     def __init__(self, config_path=None, log_callback=None, app_dir=None):
         self.logger = logging.getLogger(__name__)
         self.log_callback = log_callback if log_callback else self._default_log
@@ -230,35 +254,68 @@ class InstallerManager:
         self.log_callback(f"❌ Échec de toutes les méthodes d'installation pour {program_name}", "error")
         return False
 
-    def _download_program(self, program_info):
+    def _download_program(self, program_info, max_retries=3):
         """
-        Télécharge un programme depuis son URL (méthode interne corrigée).
+        Télécharge un programme depuis son URL avec retry automatique.
+
+        Args:
+            program_info: Dictionnaire contenant les infos du programme
+            max_retries: Nombre maximum de tentatives (défaut: 3)
+
+        Returns:
+            str: Chemin du fichier téléchargé ou None si échec
         """
-        try:
-            if not requests:
-                self.log_callback("Le module 'requests' est manquant.", "error")
-                return None
-            
-            download_url = program_info['download_url']
-            filename = program_info.get('filename', os.path.basename(urlparse(download_url).path))
-            if not filename:
-                filename = f"download_{int(time.time())}"
-            
-            file_path = self.download_dir / filename
-            
-            self.log_callback(f"Téléchargement de {filename}...", "info")
-            response = requests.get(download_url, stream=True, timeout=30)
-            response.raise_for_status()
-            
-            with open(file_path, 'wb') as f:
-                for chunk in response.iter_content(chunk_size=8192):
-                    f.write(chunk)
-            
-            self.log_callback(f"Téléchargement terminé: {file_path}", "info")
-            return str(file_path)
-        except Exception as e:
-            self.log_callback(f"Erreur lors du téléchargement: {e}", "error")
+        if not requests:
+            self.log_callback("Le module 'requests' est manquant.", "error")
             return None
+
+        download_url = program_info.get('download_url', '')
+        if not download_url:
+            self.log_callback("URL de téléchargement manquante", "error")
+            return None
+
+        filename = program_info.get('filename', os.path.basename(urlparse(download_url).path))
+        if not filename:
+            filename = f"download_{int(time.time())}"
+
+        file_path = self.download_dir / filename
+
+        # Retry avec backoff exponentiel
+        for attempt in range(1, max_retries + 1):
+            try:
+                if attempt > 1:
+                    delay = 2 ** (attempt - 1)  # 2s, 4s, 8s
+                    self.log_callback(f"⏳ Nouvelle tentative dans {delay}s... (tentative {attempt}/{max_retries})", "info")
+                    time.sleep(delay)
+
+                self.log_callback(f"📥 Téléchargement de {filename}... (tentative {attempt}/{max_retries})", "info")
+                timeout = program_info.get('download_timeout', 60)  # 60s par défaut
+                response = requests.get(download_url, stream=True, timeout=timeout)
+                response.raise_for_status()
+
+                # Téléchargement avec progression
+                with open(file_path, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        if chunk:  # Filtrer les chunks vides
+                            f.write(chunk)
+
+                self.log_callback(f"✅ Téléchargement terminé: {file_path}", "success")
+                return str(file_path)
+
+            except requests.exceptions.Timeout as e:
+                self.log_callback(f"⏱️ Timeout lors du téléchargement (tentative {attempt}/{max_retries}): {e}", "warning")
+            except requests.exceptions.ConnectionError as e:
+                self.log_callback(f"🔌 Erreur de connexion (tentative {attempt}/{max_retries}): {e}", "warning")
+            except requests.exceptions.RequestException as e:
+                self.log_callback(f"⚠️ Erreur réseau (tentative {attempt}/{max_retries}): {e}", "warning")
+            except Exception as e:
+                self.log_callback(f"❌ Erreur inattendue lors du téléchargement: {e}", "error")
+                self.logger.exception(e)
+                return None
+
+        # Toutes les tentatives ont échoué
+        self.log_callback(f"❌ Échec du téléchargement après {max_retries} tentatives", "error")
+        return None
 
     def execute_installation(self, installer_path, program_info):
         """
@@ -276,7 +333,8 @@ class InstallerManager:
 
         if is_portable or install_args == 'portable':
             portable_folder = program_info.get('cleanup_folder', 'Programmes Portables')
-            portable_dir = Path.home() / 'Desktop' / portable_folder
+            desktop_path = get_desktop_path()
+            portable_dir = desktop_path / portable_folder
             portable_dir.mkdir(parents=True, exist_ok=True)
             
             dest_file = portable_dir / Path(installer_path).name

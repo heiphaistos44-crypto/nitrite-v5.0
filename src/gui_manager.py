@@ -1,5 +1,5 @@
 """
-Gestionnaire d'interface graphique pour NiTrite v.2
+Gestionnaire d'interface graphique pour NiTriTe V5.0
 VERSION COMPLÈTE - Affiche TOUS les programmes disponibles (80+)
 MODE SOMBRE Ordi Plus
 """
@@ -31,6 +31,7 @@ class NiTriteGUIComplet:
     ACCENT_GREEN = '#00CC66'     # Vert succès
     ACCENT_RED = '#ff3333'       # Rouge erreur
     ACCENT_YELLOW = '#FFB800'    # Jaune warning (variante orange)
+    PROGRESS_GREEN = '#2ecc71'   # Vert barre de progression
     BORDER = '#444444'           # Bordures
     
     def __init__(self, root, installer_manager=None, config_manager=None):
@@ -46,6 +47,7 @@ class NiTriteGUIComplet:
         self.category_widgets = {}
         self.collapsed_categories = set()
         self.is_installing = False
+        self.installation_start_time = None  # Pour calculer le temps restant
         
         # Charger le logo Ordi Plus pour l'arrière-plan
         self.load_background_logo()
@@ -62,7 +64,7 @@ class NiTriteGUIComplet:
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
     
     def load_background_logo(self):
-        """Charge le logo Ordi Plus pour l'arrière-plan"""
+        """Charge le logo Ordi Plus pour l'arrière-plan avec transparence"""
         try:
             import sys
             # Chemins compatibles PyInstaller
@@ -72,10 +74,24 @@ class NiTriteGUIComplet:
             else:
                 # Mode développement
                 base_path = Path(__file__).parent.parent
-            
+
             logo_path = base_path / 'assets' / 'logo_ordiplus_bg.png'
             if logo_path.exists():
+                # Charger le logo
                 img = Image.open(logo_path)
+
+                # Redimensionner à 400x400 pixels
+                img = img.resize((400, 400), Image.Resampling.LANCZOS)
+
+                # Appliquer 15% d'opacité (85% de transparence)
+                if img.mode != 'RGBA':
+                    img = img.convert('RGBA')
+
+                # Réduire l'opacité à 15%
+                alpha = img.split()[3]
+                alpha = alpha.point(lambda p: int(p * 0.15))
+                img.putalpha(alpha)
+
                 self.bg_logo = ImageTk.PhotoImage(img)
             else:
                 self.bg_logo = None
@@ -86,7 +102,7 @@ class NiTriteGUIComplet:
     
     def setup_window(self):
         """Configure la fenêtre principale en plein écran"""
-        self.root.title("🚀 NiTrite v.2 - Installateur Automatique de Programmes (80+ applications)")
+        self.root.title("🚀 NiTriTe V5.0 - Installateur Automatique de Programmes (80+ applications)")
         
         # MAXIMISER complètement la fenêtre
         self.root.state('zoomed')
@@ -175,15 +191,24 @@ class NiTriteGUIComplet:
                        foreground=self.ACCENT_ORANGE,  # Orange Ordi Plus pour les catégories
                        background=self.DARK_BG)
         
-        style.configure('Action.TButton', 
+        style.configure('Action.TButton',
                        font=('Segoe UI', 11, 'bold'),
                        padding=8,
                        background=self.ACCENT_ORANGE,  # Orange Ordi Plus pour les boutons d'action
                        foreground='#ffffff')
         style.map('Action.TButton',
                  background=[('active', '#ff8533'), ('pressed', '#cc5500')])  # Variations d'orange
-        
-        style.configure('Select.TButton', 
+
+        # Barre de progression verte
+        style.configure('Green.Horizontal.TProgressbar',
+                       background=self.PROGRESS_GREEN,
+                       troughcolor=self.DARK_BG2,
+                       bordercolor=self.BORDER,
+                       darkcolor=self.PROGRESS_GREEN,
+                       lightcolor=self.PROGRESS_GREEN,
+                       thickness=20)
+
+        style.configure('Select.TButton',
                        font=('Segoe UI', 9, 'bold'),
                        padding=4)
     
@@ -290,11 +315,22 @@ class NiTriteGUIComplet:
         
         # Canvas principal avec scrollbar MODE SOMBRE
         self.main_canvas = tk.Canvas(
-            programs_frame, 
+            programs_frame,
             bg=self.DARK_BG,
             highlightthickness=0
         )
-        
+
+        # Ajouter le logo OrdiPlus en filigrane (centré, 400x400, 15% opacité)
+        if self.bg_logo:
+            # Le logo sera centré après le premier redimensionnement de la fenêtre
+            self.watermark_id = self.main_canvas.create_image(
+                0, 0,  # Position temporaire, sera centrée plus tard
+                image=self.bg_logo,
+                anchor="center"
+            )
+            # Centrer le logo lors du redimensionnement du canvas
+            self.main_canvas.bind('<Configure>', self._center_watermark)
+
         main_scrollbar = ttk.Scrollbar(programs_frame, orient="vertical", command=self.main_canvas.yview)
         self.scrollable_frame = ttk.Frame(self.main_canvas)
         
@@ -531,16 +567,31 @@ class NiTriteGUIComplet:
             foreground='#2c3e50'
         )
         self.selection_label.grid(row=0, column=0, sticky="w", padx=5)
-        
-        # Barre de progression (PLUS PETITE)
+
+        # Frame pour la barre de progression et son label
+        progress_container = ttk.Frame(action_frame)
+        progress_container.grid(row=0, column=1, sticky="ew", padx=15)
+        progress_container.grid_columnconfigure(0, weight=1)
+
+        # Label pour le pourcentage et temps restant (au-dessus de la barre)
+        self.progress_label = ttk.Label(
+            progress_container,
+            text="",
+            font=('Segoe UI', 9),
+            foreground=self.PROGRESS_GREEN
+        )
+        self.progress_label.grid(row=0, column=0, sticky="ew")
+
+        # Barre de progression VERTE
         self.progress_var = tk.DoubleVar()
         self.progress_bar = ttk.Progressbar(
-            action_frame,
+            progress_container,
             variable=self.progress_var,
             maximum=100,
-            length=200
+            length=200,
+            style='Green.Horizontal.TProgressbar'
         )
-        self.progress_bar.grid(row=0, column=1, sticky="ew", padx=15)
+        self.progress_bar.grid(row=1, column=0, sticky="ew")
         
         # Bouton d'organisation des programmes
         self.organize_button = ttk.Button(
@@ -573,7 +624,24 @@ class NiTriteGUIComplet:
     def _on_mousewheel(self, event):
         """Gestion du scroll avec la molette"""
         self.main_canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-    
+
+    def _center_watermark(self, event=None):
+        """Centre le logo en filigrane dans le canvas"""
+        if hasattr(self, 'bg_logo') and self.bg_logo and hasattr(self, 'watermark_id'):
+            # Obtenir la taille du canvas
+            canvas_width = self.main_canvas.winfo_width()
+            canvas_height = self.main_canvas.winfo_height()
+
+            # Centrer le logo
+            center_x = canvas_width // 2
+            center_y = canvas_height // 2
+
+            # Mettre à jour la position du logo
+            self.main_canvas.coords(self.watermark_id, center_x, center_y)
+
+            # S'assurer que le logo reste en arrière-plan
+            self.main_canvas.tag_lower(self.watermark_id)
+
     def select_all_programs(self):
         """Sélectionne TOUS les programmes"""
         for var in self.program_vars.values():
@@ -666,7 +734,11 @@ class NiTriteGUIComplet:
                 # Désactiver le bouton d'installation
                 self.is_installing = True
                 self.install_button.config(state='disabled', text="⏳ Installation...")
-                
+
+                # Initialiser le temps de démarrage pour le calcul du temps restant
+                import time
+                self.installation_start_time = time.time()
+
                 # Lancer l'installation dans un thread séparé
                 if self.installer_manager:
                     self.logger.info(f"🚀 Démarrage du thread d'installation...")
@@ -746,10 +818,35 @@ class NiTriteGUIComplet:
 
     
     def update_progress(self, value, message=""):
-        """Met à jour la barre de progression"""
+        """Met à jour la barre de progression avec pourcentage et temps restant"""
+        import time
+
         self.progress_var.set(value)
         if message:
             self.selection_label.config(text=f"⏳ {message}")
+
+        # Calculer et afficher le pourcentage et temps restant
+        if value > 0 and self.installation_start_time:
+            elapsed_time = time.time() - self.installation_start_time
+
+            # Estimer le temps restant basé sur le pourcentage actuel
+            if value > 0:
+                total_estimated_time = (elapsed_time / value) * 100
+                remaining_time = total_estimated_time - elapsed_time
+
+                # Convertir en minutes et secondes
+                remaining_minutes = int(remaining_time // 60)
+                remaining_seconds = int(remaining_time % 60)
+
+                # Formater le texte
+                progress_text = f"{int(value)}% • Temps restant: {remaining_minutes}min {remaining_seconds}s"
+            else:
+                progress_text = f"{int(value)}%"
+        else:
+            # Pas d'installation en cours, vider le label
+            progress_text = ""
+
+        self.progress_label.config(text=progress_text)
         self.root.update_idletasks()
     
     def log_installation_message(self, message, level="info"):
@@ -760,8 +857,9 @@ class NiTriteGUIComplet:
     def on_installation_finished(self, success):
         """Appelé quand l'installation est terminée"""
         self.is_installing = False
+        self.installation_start_time = None  # Réinitialiser le temps de démarrage
         self.install_button.config(state='normal', text="🚀 INSTALLER")
-        
+
         if success:
             messagebox.showinfo(
                 "Installation terminée",
@@ -884,7 +982,7 @@ class NiTriteGUIComplet:
         self.tools_paned.pack(fill="both", expand=True)
         
         # Initialiser l'ordre des sections (peut être modifié par drag & drop)
-        self.sections_order = ['reparation', 'activation', 'maintenance', 'diagnostics', 'reseau', 'winget', 'parametres', 'support']
+        self.sections_order = ['reparation', 'activation', 'maintenance', 'diagnostics', 'reseau', 'winget', 'parametres', 'support', 'fournisseurs', 'securite', 'benchmark', 'depannage', 'drivers', 'documentation']
         self.section_widgets = {}
 
         # Créer toutes les sections
@@ -896,7 +994,13 @@ class NiTriteGUIComplet:
         self.create_winget_section()
         self.create_parametres_section()
         self.create_support_section()
-        
+        self.create_fournisseurs_section()
+        self.create_securite_section()
+        self.create_benchmark_section()
+        self.create_depannage_section()
+        self.create_drivers_section()
+        self.create_documentation_section()
+
         # Ajouter les sections dans l'ordre initial
         for section_name in self.sections_order:
             if section_name in self.section_widgets:
@@ -973,18 +1077,18 @@ class NiTriteGUIComplet:
         self.section_widgets['reparation'] = section_frame
     
     def create_activation_section(self):
-        """Crée la section Activation - TOUS LES BOUTONS SUR UNE LIGNE"""
+        """Crée la section Activation & Téléchargements - 2 LIGNES"""
         section_frame = ttk.Frame(self.tools_paned)
 
         # En-tête avec drag handle
         header = self.create_draggable_header(section_frame, "🔑 ACTIVATION & TÉLÉCHARGEMENTS", 'activation')
         header.pack(fill="x", padx=2, pady=2)
 
-        # Contenu - UNE SEULE LIGNE
+        # Contenu - DEUX LIGNES
         content_frame = ttk.Frame(section_frame)
         content_frame.pack(fill="x", padx=2, pady=3)
 
-        # Grid 1 ligne x 5 colonnes - tous les boutons sur une ligne
+        # Grid 2 lignes x 5 colonnes
         button_container = ttk.Frame(content_frame)
         button_container.pack(fill="x")
 
@@ -992,11 +1096,19 @@ class NiTriteGUIComplet:
         for i in range(5):
             button_container.grid_columnconfigure(i, weight=1)
 
+        # LIGNE 1 - Boutons originaux
         ttk.Button(button_container, text="🔐 MAS", command=self.open_massgrave).grid(row=0, column=0, padx=1, pady=2, sticky="ew")
         ttk.Button(button_container, text="⚡ Win", command=self.activate_windows).grid(row=0, column=1, padx=1, pady=2, sticky="ew")
         ttk.Button(button_container, text="📦 Office FR", command=lambda: self.open_manufacturer_support("https://gravesoft.dev/office_c2r_links#french-fr-fr")).grid(row=0, column=2, padx=1, pady=2, sticky="ew")
         ttk.Button(button_container, text="🌊 YGG", command=lambda: self.open_manufacturer_support("https://www.yggtorrent.top/auth/login")).grid(row=0, column=3, padx=1, pady=2, sticky="ew")
         ttk.Button(button_container, text="💾 BDD Portables", command=self.show_portable_database_stats).grid(row=0, column=4, padx=1, pady=2, sticky="ew")
+
+        # LIGNE 2 - Nouveaux boutons obligatoires
+        ttk.Button(button_container, text="📚 Archive.org", command=lambda: webbrowser.open("https://archive.org/")).grid(row=1, column=0, padx=1, pady=2, sticky="ew")
+        ttk.Button(button_container, text="🎮 FitGirl Repacks", command=lambda: webbrowser.open("https://fitgirl-repacks.site/")).grid(row=1, column=1, padx=1, pady=2, sticky="ew")
+        ttk.Button(button_container, text="🔧 MajorGeeks", command=lambda: webbrowser.open("https://www.majorgeeks.com/")).grid(row=1, column=2, padx=1, pady=2, sticky="ew")
+        ttk.Button(button_container, text="🍎 EveryMac", command=lambda: webbrowser.open("https://everymac.com/")).grid(row=1, column=3, padx=1, pady=2, sticky="ew")
+        ttk.Button(button_container, text="📦 Portable AppZ", command=lambda: webbrowser.open("https://portableappz.blogspot.com/")).grid(row=1, column=4, padx=1, pady=2, sticky="ew")
 
         self.section_widgets['activation'] = section_frame
 
@@ -1082,6 +1194,7 @@ class NiTriteGUIComplet:
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
+        # Boutons commandes Windows
         diagnostics_buttons = [
             ("💻 Infos Système", "msinfo32"),
             ("🎮 DirectX Diagnostic", "dxdiag"),
@@ -1101,11 +1214,47 @@ class NiTriteGUIComplet:
             ("🧪 Test Mémoire", "MdSched.exe")
         ]
 
+        # Boutons sites web diagnostics
+        diagnostics_web_buttons = [
+            ("🔍 Speccy", "https://www.ccleaner.com/speccy"),
+            ("⚡ CPU-Z", "https://www.cpuid.com/softwares/cpu-z.html"),
+            ("🎮 GPU-Z", "https://www.techpowerup.com/gpuz/"),
+            ("💾 HWiNFO", "https://www.hwinfo.com/download/"),
+            ("💿 CrystalDiskInfo", "https://crystalmark.info/en/software/crystaldiskinfo/"),
+            ("📊 CrystalDiskMark", "https://crystalmark.info/en/software/crystaldiskmark/"),
+            ("🛠️ Sysinternals Suite", "https://learn.microsoft.com/en-us/sysinternals/downloads/sysinternals-suite"),
+            ("⚡ UserBenchmark", "https://www.userbenchmark.com/"),
+            ("📈 AIDA64", "https://www.aida64.com/downloads"),
+            ("🔧 HWMonitor", "https://www.cpuid.com/softwares/hwmonitor.html"),
+            ("💻 PC-Wizard", "https://www.cpuid.com/softwares/pc-wizard.html"),
+            ("🌡️ Core Temp", "https://www.alcpu.com/CoreTemp/"),
+            ("📊 Open Hardware Monitor", "https://openhardwaremonitor.org/downloads/"),
+            ("🔍 OCCT", "https://www.ocbase.com/"),
+            ("⚙️ MSI Afterburner", "https://www.msi.com/Landing/afterburner/graphics-cards"),
+            ("💾 HD Tune", "https://www.hdtune.com/download.html"),
+            ("📈 AS SSD Benchmark", "https://www.alex-is.de/PHP/fusion/downloads.php?cat_id=4"),
+            ("🛠️ Prime95", "https://www.mersenne.org/download/"),
+            ("🔥 FurMark", "https://geeks3d.com/furmark/"),
+            ("💻 Belarc Advisor", "https://www.belarc.com/products/belarc-advisor"),
+            ("🔍 SIW", "https://www.gtopala.com/"),
+            ("📊 CPUID HWMonitor Pro", "https://www.cpuid.com/softwares/hwmonitor-pro.html"),
+            ("🌡️ SpeedFan", "http://www.almico.com/speedfan.php"),
+            ("💾 Victoria", "https://hdd.by/victoria/"),
+            ("🔧 MemTest86", "https://www.memtest86.com/download.htm"),
+            ("📈 3DMark", "https://benchmarks.ul.com/3dmark"),
+            ("💻 PCMark", "https://benchmarks.ul.com/pcmark10"),
+            ("🔍 Geekbench", "https://www.geekbench.com/download/"),
+            ("⚡ Cinebench", "https://www.maxon.net/en/cinebench"),
+            ("🛠️ Intel Processor Diagnostic", "https://www.intel.com/content/www/us/en/download/15951/intel-processor-diagnostic-tool.html")
+        ]
+
         # Configuration 6 colonnes
         for i in range(6):
             scrollable.grid_columnconfigure(i, weight=1)
 
-        for idx, (label, cmd) in enumerate(diagnostics_buttons):
+        # Créer boutons commandes Windows
+        idx = 0
+        for label, cmd in diagnostics_buttons:
             row = idx // 6
             col = idx % 6
             ttk.Button(
@@ -1113,6 +1262,18 @@ class NiTriteGUIComplet:
                 text=label,
                 command=lambda c=cmd: self.execute_quick_command(c, True)
             ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
+            idx += 1
+
+        # Créer boutons sites web diagnostics
+        for label, url in diagnostics_web_buttons:
+            row = idx // 6
+            col = idx % 6
+            ttk.Button(
+                scrollable,
+                text=label,
+                command=lambda u=url: webbrowser.open(u)
+            ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
+            idx += 1
 
         self.section_widgets['diagnostics'] = section_frame
 
@@ -1140,6 +1301,7 @@ class NiTriteGUIComplet:
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
+        # Boutons commandes Windows réseau
         reseau_buttons = [
             ("🌐 Ping Google", "ping 8.8.8.8 -n 10"),
             ("🔍 Test DNS", "nslookup google.com"),
@@ -1154,16 +1316,51 @@ class NiTriteGUIComplet:
             ("🌐 Config Réseau", "ncpa.cpl"),
             ("📈 Moniteur Réseau", "resmon"),
             ("🔍 Test Latence", "ping 8.8.8.8 -t"),
-            ("🌍 Test Speed", "start https://fast.com"),
             ("📡 WiFi Info", "netsh wlan show interfaces"),
             ("🔐 Proxy Settings", "start ms-settings:network-proxy")
+        ]
+
+        # Boutons sites web réseau & internet
+        reseau_web_buttons = [
+            ("⚡ Speedtest.net", "https://www.speedtest.net/"),
+            ("🚀 Fast.com", "https://fast.com/"),
+            ("📊 DownDetector", "https://downdetector.com/"),
+            ("🌐 WhatIsMyIP", "https://www.whatismyip.com/"),
+            ("🔍 DNS Checker", "https://dnschecker.org/"),
+            ("🛠️ Network Tools", "https://mxtoolbox.com/NetworkTools.aspx"),
+            ("📡 Wireshark", "https://www.wireshark.org/download.html"),
+            ("📈 PingPlotter", "https://www.pingplotter.com/download"),
+            ("🌍 IP Location", "https://www.iplocation.net/"),
+            ("🔒 DNS Leak Test", "https://www.dnsleaktest.com/"),
+            ("⚡ TestMy.net", "https://testmy.net/"),
+            ("📊 Bandwidth Place", "https://www.bandwidthplace.com/"),
+            ("🌐 IP Chicken", "https://www.ipchicken.com/"),
+            ("🔍 MX Toolbox", "https://mxtoolbox.com/"),
+            ("📡 Packet Loss Test", "https://packetlosstest.com/"),
+            ("🌍 Trace Route Online", "https://www.traceroute-online.com/"),
+            ("🔒 IP Leak", "https://ipleak.net/"),
+            ("⚡ Comparitech Speed Test", "https://www.comparitech.com/internet-providers/speed-test/"),
+            ("📊 SpeedOf.Me", "https://speedof.me/"),
+            ("🌐 Geolocation IP", "https://www.geolocation.com/"),
+            ("🔍 Censys", "https://search.censys.io/"),
+            ("📡 Shodan", "https://www.shodan.io/"),
+            ("🌍 IP2Location", "https://www.ip2location.com/"),
+            ("🔒 BrowserLeaks", "https://browserleaks.com/"),
+            ("⚡ M-Lab Speed Test", "https://speed.measurementlab.net/"),
+            ("📊 SourceForge Speed Test", "https://sourceforge.net/speedtest/"),
+            ("🌐 Google Fiber Speed Test", "https://fiber.google.com/speedtest/"),
+            ("🔍 Hurricane Electric Tools", "https://bgp.he.net/"),
+            ("📡 Router Lookup", "https://www.routercheck.com/"),
+            ("🌍 IP Address Guide", "https://www.ipaddressguide.com/")
         ]
 
         # Configuration 6 colonnes
         for i in range(6):
             scrollable.grid_columnconfigure(i, weight=1)
 
-        for idx, (label, cmd) in enumerate(reseau_buttons):
+        # Créer boutons commandes Windows
+        idx = 0
+        for label, cmd in reseau_buttons:
             row = idx // 6
             col = idx % 6
             ttk.Button(
@@ -1171,6 +1368,18 @@ class NiTriteGUIComplet:
                 text=label,
                 command=lambda c=cmd: self.execute_quick_command(c, True)
             ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
+            idx += 1
+
+        # Créer boutons sites web réseau
+        for label, url in reseau_web_buttons:
+            row = idx // 6
+            col = idx % 6
+            ttk.Button(
+                scrollable,
+                text=label,
+                command=lambda u=url: webbrowser.open(u)
+            ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
+            idx += 1
 
         self.section_widgets['reseau'] = section_frame
 
@@ -1337,7 +1546,465 @@ class NiTriteGUIComplet:
             ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
         
         self.section_widgets['support'] = section_frame
-    
+
+    def create_fournisseurs_section(self):
+        """Crée la section Fournisseurs & Achats - 32+ sites"""
+        section_frame = ttk.Frame(self.tools_paned)
+
+        # En-tête avec drag handle
+        header = self.create_draggable_header(section_frame, "🛒 FOURNISSEURS & ACHATS", 'fournisseurs')
+        header.pack(fill="x", padx=2, pady=2)
+
+        # Contenu avec hauteur fixe optimale
+        content_frame = ttk.Frame(section_frame, height=120)
+        content_frame.pack(fill="both", expand=True, padx=2)
+        content_frame.pack_propagate(False)
+
+        canvas = tk.Canvas(content_frame, bg=self.DARK_BG2, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(content_frame, orient="vertical", command=canvas.yview)
+        scrollable = ttk.Frame(canvas)
+
+        scrollable.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=scrollable, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # Tous les sites fournisseurs et achats
+        fournisseurs_buttons = [
+            ("🔧 1fo Trade", "https://www.1fotrade.com/"),
+            ("💻 Acadia Info", "https://www.acadia-info.com/"),
+            ("📦 Flexit Distribution", "https://shop.flexitdistribution.com/"),
+            ("💰 1fo Discount", "https://www.1fodiscount.com/"),
+            ("🛒 Amazon FR", "https://www.amazon.fr/"),
+            ("🏪 Cdiscount", "https://www.cdiscount.com/"),
+            ("🌐 eBay FR", "https://www.ebay.fr/"),
+            ("📢 Leboncoin", "https://www.leboncoin.fr/"),
+            ("🖥️ Visiodirect", "https://www.visiodirect.net/"),
+            ("🍎 OKA Mac", "https://www.okamac.com/fr/"),
+            ("💼 Inmac Wstore", "https://www.inmac-wstore.com/"),
+            ("💡 Idealo", "https://www.idealo.fr/"),
+            ("🔥 Dealabs", "https://www.dealabs.com/"),
+            ("🏬 Rue du Commerce", "https://www.rueducommerce.fr/"),
+            ("🎌 Rakuten", "https://fr.shopping.rakuten.com/"),
+            ("📦 Noriak Distri", "https://www.noriak-distri.com/"),
+            ("🎮 Cougar Gaming", "https://www.cougargaming.fr/"),
+            ("📚 Fnac", "https://www.fnac.com/"),
+            ("💻 Grosbill", "https://www.grosbill.com/"),
+            ("💾 Crucial FR", "https://www.crucial.fr/"),
+            ("🔝 TopAchat", "https://www.topachat.com/"),
+            ("🍎 MacWay", "https://www.macway.com/"),
+            ("🚗 La Centrale", "https://www.lacentrale.fr/"),
+            ("🔌 Darty", "https://www.darty.com/"),
+            ("🏪 Boulanger", "https://www.boulanger.com/"),
+            ("🛒 E.Leclerc", "https://www.e.leclerc/"),
+            ("🇨🇭 Digitec CH", "https://www.digitec.ch/fr"),
+            ("🔍 Le Dénicheur", "https://ledenicheur.fr/"),
+            ("💼 Dell FR", "https://www.dell.com/fr-fr"),
+            ("🖨️ HP FR", "https://www.hp.com/fr-fr/shop/"),
+            ("💻 Lenovo FR", "https://www.lenovo.com/fr/fr/"),
+            ("📱 Samsung FR", "https://www.samsung.com/fr/")
+        ]
+
+        # Configuration 6 colonnes
+        for i in range(6):
+            scrollable.grid_columnconfigure(i, weight=1)
+
+        # Créer tous les boutons
+        for idx, (label, url) in enumerate(fournisseurs_buttons):
+            row = idx // 6
+            col = idx % 6
+            ttk.Button(
+                scrollable,
+                text=label,
+                command=lambda u=url: webbrowser.open(u)
+            ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
+
+        self.section_widgets['fournisseurs'] = section_frame
+
+    def create_securite_section(self):
+        """Crée la section Sécurité & Confidentialité"""
+        section_frame = ttk.Frame(self.tools_paned)
+
+        # En-tête avec drag handle
+        header = self.create_draggable_header(section_frame, "🔒 SÉCURITÉ & CONFIDENTIALITÉ", 'securite')
+        header.pack(fill="x", padx=2, pady=2)
+
+        # Contenu avec hauteur fixe optimale
+        content_frame = ttk.Frame(section_frame, height=120)
+        content_frame.pack(fill="both", expand=True, padx=2)
+        content_frame.pack_propagate(False)
+
+        canvas = tk.Canvas(content_frame, bg=self.DARK_BG2, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(content_frame, orient="vertical", command=canvas.yview)
+        scrollable = ttk.Frame(canvas)
+
+        scrollable.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=scrollable, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # Sites sécurité et confidentialité
+        securite_buttons = [
+            ("🔒 ProtonVPN", "https://protonvpn.com/"),
+            ("🛡️ NordVPN", "https://nordvpn.com/"),
+            ("⚡ ExpressVPN", "https://www.expressvpn.com/"),
+            ("🔐 Malwarebytes", "https://www.malwarebytes.com/"),
+            ("🛡️ Kaspersky Free", "https://www.kaspersky.fr/downloads/free-antivirus"),
+            ("🔒 Bitdefender Free", "https://www.bitdefender.com/solutions/free.html"),
+            ("🌐 Have I Been Pwned", "https://haveibeenpwned.com/"),
+            ("🔐 VirusTotal", "https://www.virustotal.com/"),
+            ("🛡️ Hybrid Analysis", "https://www.hybrid-analysis.com/"),
+            ("🔒 Any.Run", "https://any.run/"),
+            ("⚡ URLScan.io", "https://urlscan.io/"),
+            ("🔐 Shodan", "https://www.shodan.io/"),
+            ("🛡️ Joe Sandbox", "https://www.joesandbox.com/"),
+            ("🔒 Avast Free", "https://www.avast.com/free-antivirus-download"),
+            ("⚡ AVG Free", "https://www.avg.com/free-antivirus-download"),
+            ("🔐 Windows Defender", "windowsdefender:"),
+            ("🛡️ KeePass", "https://keepass.info/download.html"),
+            ("🔒 Bitwarden", "https://bitwarden.com/download/"),
+            ("⚡ 1Password", "https://1password.com/downloads/"),
+            ("🔐 LastPass", "https://www.lastpass.com/download"),
+            ("🛡️ VeraCrypt", "https://www.veracrypt.fr/en/Downloads.html"),
+            ("🔒 Tor Browser", "https://www.torproject.org/download/"),
+            ("⚡ Brave Browser", "https://brave.com/download/"),
+            ("🔐 Privacy Badger", "https://privacybadger.org/"),
+            ("🛡️ uBlock Origin", "https://ublockorigin.com/"),
+            ("🔒 HTTPS Everywhere", "https://www.eff.org/https-everywhere"),
+            ("⚡ No-IP", "https://www.noip.com/"),
+            ("🔐 DuckDuckGo", "https://duckduckgo.com/"),
+            ("🛡️ Startpage", "https://www.startpage.com/"),
+            ("🔒 ProtonMail", "https://proton.me/mail"),
+            ("⚡ Tutanota", "https://tutanota.com/"),
+            ("🔐 Ghostery", "https://www.ghostery.com/"),
+            ("🛡️ Disconnect", "https://disconnect.me/"),
+            ("🔒 CyberGhost VPN", "https://www.cyberghostvpn.com/"),
+            ("⚡ Windscribe VPN", "https://windscribe.com/")
+        ]
+
+        # Configuration 6 colonnes
+        for i in range(6):
+            scrollable.grid_columnconfigure(i, weight=1)
+
+        # Créer tous les boutons
+        for idx, (label, url) in enumerate(securite_buttons):
+            row = idx // 6
+            col = idx % 6
+            ttk.Button(
+                scrollable,
+                text=label,
+                command=lambda u=url: webbrowser.open(u) if u.startswith('http') else self.execute_quick_command(u, False)
+            ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
+
+        self.section_widgets['securite'] = section_frame
+
+    def create_benchmark_section(self):
+        """Crée la section Benchmark & Tests"""
+        section_frame = ttk.Frame(self.tools_paned)
+
+        # En-tête avec drag handle
+        header = self.create_draggable_header(section_frame, "📊 BENCHMARK & TESTS", 'benchmark')
+        header.pack(fill="x", padx=2, pady=2)
+
+        # Contenu avec hauteur fixe optimale
+        content_frame = ttk.Frame(section_frame, height=120)
+        content_frame.pack(fill="both", expand=True, padx=2)
+        content_frame.pack_propagate(False)
+
+        canvas = tk.Canvas(content_frame, bg=self.DARK_BG2, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(content_frame, orient="vertical", command=canvas.yview)
+        scrollable = ttk.Frame(canvas)
+
+        scrollable.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=scrollable, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # Sites benchmark et tests
+        benchmark_buttons = [
+            ("⚡ UserBenchmark", "https://www.userbenchmark.com/"),
+            ("📊 3DMark", "https://benchmarks.ul.com/3dmark"),
+            ("💻 PCMark", "https://benchmarks.ul.com/pcmark10"),
+            ("🔍 Geekbench", "https://www.geekbench.com/"),
+            ("⚡ Cinebench", "https://www.maxon.net/en/cinebench"),
+            ("📈 PassMark", "https://www.passmark.com/"),
+            ("💾 CrystalDiskMark", "https://crystalmark.info/en/software/crystaldiskmark/"),
+            ("📊 AS SSD Benchmark", "https://www.alex-is.de/"),
+            ("⚡ ATTO Disk Benchmark", "https://www.atto.com/disk-benchmark/"),
+            ("🔍 HD Tune", "https://www.hdtune.com/"),
+            ("📈 Unigine Heaven", "https://benchmark.unigine.com/heaven"),
+            ("💻 Unigine Valley", "https://benchmark.unigine.com/valley"),
+            ("📊 Unigine Superposition", "https://benchmark.unigine.com/superposition"),
+            ("⚡ FurMark", "https://geeks3d.com/furmark/"),
+            ("🔍 Prime95", "https://www.mersenne.org/download/"),
+            ("📈 AIDA64", "https://www.aida64.com/"),
+            ("💾 MemTest86", "https://www.memtest86.com/"),
+            ("📊 MemTest64", "https://www.techpowerup.com/memtest64/"),
+            ("⚡ OCCT", "https://www.ocbase.com/"),
+            ("🔍 Intel Burn Test", "https://www.techspot.com/downloads/4965-intel-burn-test.html"),
+            ("📈 LinX", "https://www.techpowerup.com/download/linx/"),
+            ("💻 Y-Cruncher", "http://www.numberworld.org/y-cruncher/"),
+            ("📊 Blender Benchmark", "https://opendata.blender.org/"),
+            ("⚡ V-Ray Benchmark", "https://www.chaos.com/vray/benchmark"),
+            ("🔍 Basemark GPU", "https://www.basemark.com/products/basemark-gpu/"),
+            ("📈 GFXBench", "https://gfxbench.com/"),
+            ("💾 ADATA SSD Toolbox", "https://www.adata.com/us/ss/software-5/"),
+            ("📊 Samsung Magician", "https://www.samsung.com/semiconductor/minisite/ssd/product/consumer/magician/"),
+            ("⚡ Western Digital Dashboard", "https://support.wdc.com/downloads.aspx?lang=en"),
+            ("🔍 Crucial Storage Executive", "https://www.crucial.com/support/storage-executive")
+        ]
+
+        # Configuration 6 colonnes
+        for i in range(6):
+            scrollable.grid_columnconfigure(i, weight=1)
+
+        # Créer tous les boutons
+        for idx, (label, url) in enumerate(benchmark_buttons):
+            row = idx // 6
+            col = idx % 6
+            ttk.Button(
+                scrollable,
+                text=label,
+                command=lambda u=url: webbrowser.open(u)
+            ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
+
+        self.section_widgets['benchmark'] = section_frame
+
+    def create_depannage_section(self):
+        """Crée la section Dépannage à Distance"""
+        section_frame = ttk.Frame(self.tools_paned)
+
+        # En-tête avec drag handle
+        header = self.create_draggable_header(section_frame, "🖥️ DÉPANNAGE À DISTANCE", 'depannage')
+        header.pack(fill="x", padx=2, pady=2)
+
+        # Contenu avec hauteur fixe optimale
+        content_frame = ttk.Frame(section_frame, height=120)
+        content_frame.pack(fill="both", expand=True, padx=2)
+        content_frame.pack_propagate(False)
+
+        canvas = tk.Canvas(content_frame, bg=self.DARK_BG2, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(content_frame, orient="vertical", command=canvas.yview)
+        scrollable = ttk.Frame(canvas)
+
+        scrollable.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=scrollable, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # Sites dépannage à distance
+        depannage_buttons = [
+            ("🖥️ TeamViewer", "https://www.teamviewer.com/fr/"),
+            ("💻 AnyDesk", "https://anydesk.com/fr"),
+            ("📡 Chrome Remote Desktop", "https://remotedesktop.google.com/"),
+            ("🔧 RustDesk", "https://rustdesk.com/"),
+            ("⚡ TightVNC", "https://www.tightvnc.com/"),
+            ("🌐 UltraVNC", "https://uvnc.com/"),
+            ("💼 Splashtop", "https://www.splashtop.com/"),
+            ("📊 LogMeIn", "https://www.logmein.com/"),
+            ("🔍 Zoho Assist", "https://www.zoho.com/assist/"),
+            ("⚡ RemotePC", "https://www.remotepc.com/"),
+            ("🖥️ Ammyy Admin", "https://www.ammyy.com/"),
+            ("💻 ShowMyPC", "https://showmypc.com/"),
+            ("📡 DWService", "https://www.dwservice.net/"),
+            ("🔧 NoMachine", "https://www.nomachine.com/"),
+            ("⚡ VNC Connect", "https://www.realvnc.com/fr/connect/download/viewer/"),
+            ("🌐 Mikogo", "https://www.mikogo.com/"),
+            ("💼 GoToMyPC", "https://www.gotomypc.com/"),
+            ("📊 Connectwise Control", "https://control.connectwise.com/"),
+            ("🔍 Supremo", "https://www.supremocontrol.com/"),
+            ("⚡ LiteManager", "https://www.litemanager.com/"),
+            ("🖥️ Microsoft Quick Assist", "ms-quick-assist:"),
+            ("💻 Windows Remote Desktop", "mstsc")
+        ]
+
+        # Configuration 6 colonnes
+        for i in range(6):
+            scrollable.grid_columnconfigure(i, weight=1)
+
+        # Créer tous les boutons
+        for idx, (label, cmd_or_url) in enumerate(depannage_buttons):
+            row = idx // 6
+            col = idx % 6
+            if cmd_or_url.startswith('http') or cmd_or_url.startswith('ms-'):
+                ttk.Button(
+                    scrollable,
+                    text=label,
+                    command=lambda u=cmd_or_url: webbrowser.open(u)
+                ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
+            else:
+                ttk.Button(
+                    scrollable,
+                    text=label,
+                    command=lambda c=cmd_or_url: self.execute_quick_command(c, False)
+                ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
+
+        self.section_widgets['depannage'] = section_frame
+
+    def create_drivers_section(self):
+        """Crée la section Drivers & Pilotes"""
+        section_frame = ttk.Frame(self.tools_paned)
+
+        # En-tête avec drag handle
+        header = self.create_draggable_header(section_frame, "💿 DRIVERS & PILOTES", 'drivers')
+        header.pack(fill="x", padx=2, pady=2)
+
+        # Contenu avec hauteur fixe optimale
+        content_frame = ttk.Frame(section_frame, height=120)
+        content_frame.pack(fill="both", expand=True, padx=2)
+        content_frame.pack_propagate(False)
+
+        canvas = tk.Canvas(content_frame, bg=self.DARK_BG2, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(content_frame, orient="vertical", command=canvas.yview)
+        scrollable = ttk.Frame(canvas)
+
+        scrollable.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=scrollable, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # Sites drivers et pilotes
+        drivers_buttons = [
+            ("🎮 NVIDIA Drivers", "https://www.nvidia.com/Download/index.aspx"),
+            ("🔴 AMD Drivers", "https://www.amd.com/en/support"),
+            ("💻 Intel Drivers", "https://www.intel.com/content/www/us/en/download-center/home.html"),
+            ("🖨️ HP Support", "https://support.hp.com/drivers"),
+            ("💼 Dell Drivers", "https://www.dell.com/support/home/"),
+            ("📱 Lenovo Support", "https://support.lenovo.com/"),
+            ("🔧 ASUS Support", "https://www.asus.com/support/Download-Center/"),
+            ("⚡ MSI Support", "https://www.msi.com/support/download"),
+            ("🌐 Gigabyte Support", "https://www.gigabyte.com/Support"),
+            ("💾 Samsung Support", "https://www.samsung.com/us/support/downloads/"),
+            ("📊 Realtek", "https://www.realtek.com/en/downloads"),
+            ("🔊 Creative Labs", "https://support.creative.com/"),
+            ("🎵 Sound Blaster", "https://support.creative.com/products/soundblaster/"),
+            ("📡 TP-Link", "https://www.tp-link.com/support/download/"),
+            ("🌐 Netgear", "https://www.netgear.com/support/download/"),
+            ("⚡ D-Link", "https://www.dlink.com/support/"),
+            ("🖥️ Canon Drivers", "https://www.canon.com/support/"),
+            ("🖨️ Epson Support", "https://epson.com/Support/sl/s"),
+            ("📄 Brother Support", "https://support.brother.com/"),
+            ("💼 Xerox Drivers", "https://www.xerox.com/downloads"),
+            ("🔧 Logitech Support", "https://support.logi.com/"),
+            ("🖱️ Razer Support", "https://support.razer.com/"),
+            ("⌨️ Corsair Support", "https://www.corsair.com/support"),
+            ("🎮 SteelSeries", "https://steelseries.com/downloads"),
+            ("📱 Western Digital", "https://support.wdc.com/downloads.aspx"),
+            ("💾 Seagate Support", "https://www.seagate.com/support/downloads/"),
+            ("🔊 Focusrite", "https://focusrite.com/downloads"),
+            ("🎵 Behringer", "https://www.behringer.com/downloads.html"),
+            ("📡 DriverPack", "https://drp.su/"),
+            ("🔍 Snappy Driver Installer", "https://sdi-tool.org/"),
+            ("⚡ Driver Booster", "https://www.iobit.com/driver-booster.php"),
+            ("💻 DriverEasy", "https://www.drivereasy.com/"),
+            ("🔧 Driver Genius", "https://www.driver-soft.com/"),
+            ("🌐 SlimDrivers", "https://www.slimwareutilities.com/slimdrivers.php")
+        ]
+
+        # Configuration 6 colonnes
+        for i in range(6):
+            scrollable.grid_columnconfigure(i, weight=1)
+
+        # Créer tous les boutons
+        for idx, (label, url) in enumerate(drivers_buttons):
+            row = idx // 6
+            col = idx % 6
+            ttk.Button(
+                scrollable,
+                text=label,
+                command=lambda u=url: webbrowser.open(u)
+            ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
+
+        self.section_widgets['drivers'] = section_frame
+
+    def create_documentation_section(self):
+        """Crée la section Documentation Technique"""
+        section_frame = ttk.Frame(self.tools_paned)
+
+        # En-tête avec drag handle
+        header = self.create_draggable_header(section_frame, "📚 DOCUMENTATION TECHNIQUE", 'documentation')
+        header.pack(fill="x", padx=2, pady=2)
+
+        # Contenu avec hauteur fixe optimale
+        content_frame = ttk.Frame(section_frame, height=120)
+        content_frame.pack(fill="both", expand=True, padx=2)
+        content_frame.pack_propagate(False)
+
+        canvas = tk.Canvas(content_frame, bg=self.DARK_BG2, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(content_frame, orient="vertical", command=canvas.yview)
+        scrollable = ttk.Frame(canvas)
+
+        scrollable.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=scrollable, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # Sites documentation technique
+        documentation_buttons = [
+            ("📖 Microsoft Docs", "https://docs.microsoft.com/"),
+            ("💻 TechNet", "https://technet.microsoft.com/"),
+            ("🔧 Tom's Hardware", "https://www.tomshardware.com/"),
+            ("⚡ AnandTech", "https://www.anandtech.com/"),
+            ("📊 PCPartPicker", "https://pcpartpicker.com/"),
+            ("🌐 Stack Overflow", "https://stackoverflow.com/"),
+            ("💼 Super User", "https://superuser.com/"),
+            ("🔍 Reddit r/techsupport", "https://www.reddit.com/r/techsupport/"),
+            ("📈 Reddit r/buildapc", "https://www.reddit.com/r/buildapc/"),
+            ("💾 NotebookCheck", "https://www.notebookcheck.net/"),
+            ("🖥️ LaptopMag", "https://www.laptopmag.com/"),
+            ("🔧 iFixit", "https://www.ifixit.com/"),
+            ("⚡ LinusTechTips Forum", "https://linustechtips.com/"),
+            ("📚 Wikiwand Tech", "https://www.wikiwand.com/"),
+            ("💻 Wikipedia Tech", "https://en.wikipedia.org/wiki/Portal:Technology"),
+            ("🌐 GitHub", "https://github.com/"),
+            ("🔍 GitLab", "https://gitlab.com/"),
+            ("📊 BitBucket", "https://bitbucket.org/"),
+            ("⚡ DevDocs", "https://devdocs.io/"),
+            ("💼 W3Schools", "https://www.w3schools.com/"),
+            ("🔧 MDN Web Docs", "https://developer.mozilla.org/"),
+            ("📈 Can I Use", "https://caniuse.com/"),
+            ("💾 Regex101", "https://regex101.com/"),
+            ("🖥️ Ninite", "https://ninite.com/"),
+            ("🔍 AlternativeTo", "https://alternativeto.net/"),
+            ("⚡ FileHippo", "https://filehippo.com/"),
+            ("📚 Softpedia", "https://www.softpedia.com/"),
+            ("💻 FileHorse", "https://www.filehorse.com/"),
+            ("🌐 SourceForge", "https://sourceforge.net/"),
+            ("🔧 Chocolatey", "https://chocolatey.org/"),
+            ("⚡ WingetUI", "https://www.marticliment.com/wingetui/"),
+            ("📊 PCGamingWiki", "https://www.pcgamingwiki.com/"),
+            ("💼 ProtonDB", "https://www.protondb.com/"),
+            ("🔍 ArchWiki", "https://wiki.archlinux.org/")
+        ]
+
+        # Configuration 6 colonnes
+        for i in range(6):
+            scrollable.grid_columnconfigure(i, weight=1)
+
+        # Créer tous les boutons
+        for idx, (label, url) in enumerate(documentation_buttons):
+            row = idx // 6
+            col = idx % 6
+            ttk.Button(
+                scrollable,
+                text=label,
+                command=lambda u=url: webbrowser.open(u)
+            ).grid(row=row, column=col, pady=1, padx=1, sticky="ew")
+
+        self.section_widgets['documentation'] = section_frame
+
     def create_draggable_header(self, parent, title, section_name):
         """Crée un en-tête draggable pour réorganiser les sections"""
         header = tk.Frame(parent, bg=self.ACCENT_BLUE, cursor="hand2", height=30)  # Bleu foncé Ordi Plus
@@ -1747,10 +2414,10 @@ class NiTriteGUIComplet:
         ttk.Button(button_frame, text="❌ Annuler", command=dialog.destroy).pack(side="left", padx=5)
     
     def on_closing(self):
-        """Fermeture propre de l'application"""
+        """Fermeture propre de l'application avec arrêt des processus enfants"""
         import sys
         import gc
-        
+
         try:
             # Arrêter toute installation en cours
             if self.is_installing:
@@ -1759,7 +2426,47 @@ class NiTriteGUIComplet:
                     "Une installation est en cours. Voulez-vous vraiment quitter ?"
                 ):
                     return
-            
+
+            # Arrêter proprement tous les processus enfants avec psutil
+            try:
+                import psutil
+                import os
+
+                # Afficher message d'arrêt des processus
+                if hasattr(self, 'selection_label'):
+                    self.selection_label.config(text="Arrêt des processus en cours...")
+                    self.root.update_idletasks()
+
+                current_process = psutil.Process(os.getpid())
+                children = current_process.children(recursive=True)
+
+                if children:
+                    self.logger.info(f"Arrêt de {len(children)} processus enfant(s)...")
+
+                    # Terminer proprement chaque processus enfant
+                    for child in children:
+                        try:
+                            child.terminate()
+                        except (psutil.NoSuchProcess, psutil.AccessDenied):
+                            pass
+
+                    # Attendre que les processus se terminent (max 3 secondes)
+                    gone, alive = psutil.wait_procs(children, timeout=3)
+
+                    # Forcer l'arrêt des processus qui ne se sont pas terminés
+                    for p in alive:
+                        try:
+                            p.kill()
+                        except (psutil.NoSuchProcess, psutil.AccessDenied):
+                            pass
+
+                    self.logger.info(f"✅ Processus enfants arrêtés proprement")
+
+            except ImportError:
+                self.logger.warning("psutil non disponible - arrêt basique")
+            except Exception as e:
+                self.logger.error(f"Erreur lors de l'arrêt des processus: {e}")
+
             # Fermer tous les logs
             logging.shutdown()
             

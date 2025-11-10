@@ -42,14 +42,29 @@ LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
 # --- FIN BLOC CORRECTION CHEMINS ---
 
-# Configuration du logging
+# Configuration du logging avec rotation
+from logging.handlers import RotatingFileHandler
+
+# Handler rotatif: 10 MB max par fichier, 5 fichiers de backup
+log_file = LOGS_DIR / 'nitrite.log'
+file_handler = RotatingFileHandler(
+    log_file,
+    maxBytes=10*1024*1024,  # 10 MB
+    backupCount=5,
+    encoding='utf-8'
+)
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+
+# Handler console
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
+console_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+
+# Configuration du logger racine
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler(LOGS_DIR / 'nitrite.log', mode='w', encoding='utf-8'),
-        logging.StreamHandler()
-    ]
+    handlers=[file_handler, console_handler]
 )
 logger = logging.getLogger(__name__)
 
