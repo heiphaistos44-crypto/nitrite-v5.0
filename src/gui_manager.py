@@ -575,18 +575,18 @@ class NiTriteGUIComplet:
             category_header.grid(row=row, column=0, sticky="ew", pady=(10, 5), padx=5)
             category_header.grid_columnconfigure(1, weight=1)
 
-            # 🔽 Bouton plier/déplier simple
+            # 🔽 Bouton plier/déplier compact
             collapse_btn = tk.Button(
                 category_header,
                 text="▼",
-                width=3,
-                height=1,
                 bg=self.ACCENT_ORANGE,
                 fg='#ffffff',
-                font=('Segoe UI', 11, 'bold'),
+                font=('Segoe UI', 8),
                 relief='raised',
                 bd=2,
                 cursor='hand2',
+                padx=6,
+                pady=2,
                 command=lambda cat=category: self.toggle_category(cat)
             )
             collapse_btn.grid(row=0, column=0, padx=8, pady=5)
@@ -603,18 +603,18 @@ class NiTriteGUIComplet:
             )
             category_label.grid(row=0, column=1, sticky="ew", padx=10, pady=5)
 
-            # ✅ Bouton sélectionner tout - Simple
+            # ✅ Bouton sélectionner tout - Compact
             select_cat_btn = tk.Button(
                 category_header,
                 text="✓ Tout sélectionner",
-                font=('Segoe UI', 10, 'bold'),
+                font=('Segoe UI', 8),
                 bg=self.ACCENT_GREEN,
                 fg='#ffffff',
                 relief='raised',
                 bd=2,
                 cursor='hand2',
-                padx=15,
-                pady=5,
+                padx=8,
+                pady=3,
                 command=lambda c=category: self.select_category(c)
             )
             select_cat_btn.grid(row=0, column=2, padx=8, pady=5)
@@ -664,13 +664,13 @@ class NiTriteGUIComplet:
                 checkbox_frame = ttk.Frame(prog_frame)
                 checkbox_frame.pack(anchor='w', fill='x')
 
-                # • Point pour lien web (taille moyenne)
+                # • Point pour lien web (plus grand pour visibilité)
                 download_url = program_info.get('download_url', '')
                 if download_url:
                     web_point = tk.Label(
                         checkbox_frame,
                         text="•",
-                        font=('Arial', 12),
+                        font=('Arial', 16),
                         fg=self.ACCENT_BLUE,
                         bg=self.DARK_BG,
                         cursor='hand2'
