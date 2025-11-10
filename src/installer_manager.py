@@ -273,6 +273,16 @@ class InstallerManager:
                 return True
             self.log_callback("⚠️ Échec de l'installation via winget.", "warning")
 
+            # Stratégie 2b: Essayer les IDs WinGet alternatifs si présents
+            fallback_ids = program_info.get('winget_fallback_ids', [])
+            if fallback_ids:
+                for idx, fallback_id in enumerate(fallback_ids, 1):
+                    self.log_callback(f"🔄 Tentative {idx} avec WinGet ID alternatif: {fallback_id}...", "info")
+                    if self.install_via_winget(fallback_id, program_info):
+                        self.log_callback(f"✅ {program_name} installé avec succès via winget (ID alternatif).", "success")
+                        return True
+                    self.log_callback(f"⚠️ Échec avec ID alternatif {fallback_id}.", "warning")
+
         self.log_callback(f"❌ Échec de toutes les méthodes d'installation pour {program_name}", "error")
         return False, "Toutes les méthodes d'installation ont échoué"
 
@@ -841,6 +851,7 @@ class InstallerManager:
             
             # Construire la commande winget
             cmd = ['winget', 'install', '--id', winget_id, '--silent', '--accept-package-agreements', '--accept-source-agreements']
+            self.log_callback(f"🔧 Commande WinGet: {' '.join(cmd)}", "info")
             
             # Vérifier si admin requis
             admin_required = program_info.get('admin_required', True)
@@ -853,7 +864,9 @@ class InstallerManager:
                     self.log_callback(f"✅ {program_info['name']} installé via winget", "success")
                     return True
                 else:
-                    self.log_callback(f"❌ Erreur winget: {stderr[:200]}", "error")
+                    self.log_callback(f"❌ Erreur winget (code {returncode}):", "error")
+                    self.log_callback(f"STDOUT: {stdout if stdout else '(vide)'}", "error")
+                    self.log_callback(f"STDERR: {stderr if stderr else '(vide)'}", "error")
                     return False
             else:
                 # Exécuter sans privilèges admin
@@ -869,7 +882,9 @@ class InstallerManager:
                     self.log_callback(f"✅ {program_info['name']} installé via winget", "success")
                     return True
                 else:
-                    self.log_callback(f"❌ Erreur winget: {result.stderr[:200]}", "error")
+                    self.log_callback(f"❌ Erreur winget (code {result.returncode}):", "error")
+                    self.log_callback(f"STDOUT: {result.stdout if result.stdout else '(vide)'}", "error")
+                    self.log_callback(f"STDERR: {result.stderr if result.stderr else '(vide)'}", "error")
                     return False
                     
         except subprocess.TimeoutExpired:
