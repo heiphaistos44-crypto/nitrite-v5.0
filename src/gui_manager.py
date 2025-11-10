@@ -492,30 +492,44 @@ class NiTriteGUIComplet:
                 
                 # Vérifier si c'est un désinstallateur (catégorie spéciale)
                 is_uninstaller = category == "Désinstallateurs Antivirus"
-                
+
                 # Tous les programmes ont maintenant une checkbox
                 checkbox_count += 1
                 var = tk.BooleanVar()
                 self.program_vars[program_name] = var
-                
+
+                # Frame horizontal pour checkbox + bouton web
+                checkbox_frame = ttk.Frame(prog_frame)
+                checkbox_frame.pack(anchor='w', fill='x')
+
                 # Checkbox avec nom du programme (POLICE PLUS PETITE)
                 checkbox = ttk.Checkbutton(
-                    prog_frame,
+                    checkbox_frame,
                     text=program_name,
                     variable=var,
                     style='Program.TCheckbutton'
                 )
-                checkbox.pack(anchor='w')
-                
+                checkbox.pack(side='left', anchor='w')
+
+                # Bouton web à côté de chaque checkbox
+                download_url = program_info.get('download_url', '')
+                if download_url:
+                    web_btn = ttk.Button(
+                        checkbox_frame,
+                        text="🌐",
+                        command=lambda url=download_url: self.open_download_link(url),
+                        width=3
+                    )
+                    web_btn.pack(side='left', padx=(5, 0))
+
                 # Configurer la police plus petite
                 checkbox.configure(style='Program.TCheckbutton')
-                
+
                 # Lier manuellement le changement
                 var.trace_add('write', lambda *args: self.safe_update_selection_count())
-                
-                # Pour les désinstallateurs, ajouter un bouton de téléchargement en plus
+
+                # Pour les désinstallateurs, ajouter un bouton de téléchargement supplémentaire
                 if is_uninstaller:
-                    download_url = program_info.get('download_url', '')
                     if download_url:
                         download_btn = ttk.Button(
                             prog_frame,
@@ -1390,6 +1404,14 @@ class NiTriteGUIComplet:
 
     def enable_category_drag_drop(self):
         """Active le drag & drop pour réorganiser les catégories"""
+        # Créer un mapping inverse title_frame -> title_string pour faciliter le drag
+        self.title_frame_to_string = {}
+        for title_str, main_frame in self.section_frames.items():
+            for child in main_frame.winfo_children():
+                if isinstance(child, tk.Frame):
+                    self.title_frame_to_string[child] = title_str
+                    break
+
         for section_title in self.section_titles:
             section_title.bind("<Button-1>", self.start_category_drag)
             section_title.bind("<B1-Motion>", self.do_category_drag)
@@ -1400,18 +1422,25 @@ class NiTriteGUIComplet:
         """Début du drag d'une catégorie"""
         self.dragging_category = event.widget
         self.drag_start_y = event.y_root
+        # Feedback visuel immédiat
+        event.widget.config(bg=self.ACCENT_ORANGE, relief="raised")
 
     def do_category_drag(self, event):
-        """Pendant le drag"""
+        """Pendant le drag - montrer la position actuelle"""
         if self.dragging_category:
-            self.dragging_category.config(bg=self.ACCENT_ORANGE)
+            delta_y = event.y_root - self.drag_start_y
+            # Calculer combien de positions on se déplace
+            steps = int(delta_y / 50)
+            if steps != 0:
+                # Montrer visuellement le déplacement
+                self.dragging_category.config(bg=self.ACCENT_ORANGE if abs(steps) > 0 else self.DARK_BG2)
 
     def end_category_drag(self, event):
         """Fin du drag - réorganiser"""
         if self.dragging_category:
             delta_y = event.y_root - self.drag_start_y
             self.reorder_sections_by_drag(self.dragging_category, delta_y)
-            self.dragging_category.config(bg=self.DARK_BG2)
+            self.dragging_category.config(bg=self.DARK_BG2, relief="flat")
             self.dragging_category = None
 
     def reorder_sections_by_drag(self, moved_title_frame, delta):
@@ -1420,22 +1449,60 @@ class NiTriteGUIComplet:
         if moved_title_frame not in self.section_titles:
             return
 
-        # Si déplacement significatif
-        if abs(delta) > 30:
+        # Si déplacement significatif (réduit à 20 pour plus de sensibilité)
+        if abs(delta) > 20:
             current_index = self.section_titles.index(moved_title_frame)
-            new_index = current_index
 
-            if delta < 0 and current_index > 0:
-                new_index = current_index - 1
-            elif delta > 0 and current_index < len(self.section_titles) - 1:
-                new_index = current_index + 1
+            # Calculer le nouvel index basé sur le delta (permet plusieurs positions)
+            steps = int(delta / 50)  # Chaque 50 pixels = 1 position
+            new_index = current_index + steps
+
+            # Limiter aux bornes
+            new_index = max(0, min(new_index, len(self.section_titles) - 1))
 
             if new_index != current_index:
-                # Réorganiser la liste
-                self.section_titles.insert(new_index, self.section_titles.pop(current_index))
-                # Réorganiser visuellement
-                self.refresh_sections_order()
-                self.save_sections_order()
+                # Utiliser le mapping pour trouver le titre string
+                moved_title_str = self.title_frame_to_string.get(moved_title_frame)
+
+                if not moved_title_str:
+                    # Fallback: utiliser l'index
+                    sections_list = list(self.section_frames.keys())
+                    if current_index < len(sections_list):
+                        moved_title_str = sections_list[current_index]
+
+                if moved_title_str:
+                    # Réorganiser section_titles
+                    moved_item = self.section_titles.pop(current_index)
+                    self.section_titles.insert(new_index, moved_item)
+
+                    # Réorganiser section_frames dans le nouvel ordre
+                    sections_list = list(self.section_frames.items())
+
+                    # Trouver l'item à déplacer
+                    item_to_move = None
+                    old_index = None
+                    for i, (key, val) in enumerate(sections_list):
+                        if key == moved_title_str:
+                            item_to_move = (key, val)
+                            old_index = i
+                            break
+
+                    if item_to_move and old_index is not None:
+                        sections_list.pop(old_index)
+                        sections_list.insert(new_index, item_to_move)
+                        self.section_frames = dict(sections_list)
+
+                        # Reconstruire le mapping après réorganisation
+                        self.title_frame_to_string = {}
+                        for title_str, main_frame in self.section_frames.items():
+                            for child in main_frame.winfo_children():
+                                if isinstance(child, tk.Frame):
+                                    self.title_frame_to_string[child] = title_str
+                                    break
+
+                    # Réorganiser visuellement
+                    self.refresh_sections_order()
+                    self.save_sections_order()
 
     def move_section_up(self, section_title):
         """Déplace une section vers le haut"""
