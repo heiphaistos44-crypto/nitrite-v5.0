@@ -502,14 +502,23 @@ class NiTriteGUIComplet:
                 checkbox_frame = ttk.Frame(prog_frame)
                 checkbox_frame.pack(anchor='w', fill='x')
 
-                # Bouton web À GAUCHE de la checkbox (plus petit)
+                # Bouton web À GAUCHE de la checkbox (même taille que checkbox)
                 download_url = program_info.get('download_url', '')
                 if download_url:
-                    web_btn = ttk.Button(
+                    web_btn = tk.Button(
                         checkbox_frame,
                         text="🌐",
                         command=lambda url=download_url: self.open_download_link(url),
-                        width=2
+                        width=2,
+                        height=1,
+                        bg=self.DARK_BG3,
+                        fg=self.DARK_FG,
+                        activebackground=self.ACCENT_ORANGE,
+                        activeforeground='white',
+                        relief='flat',
+                        bd=1,
+                        font=('Segoe UI', 8),
+                        cursor='hand2'
                     )
                     web_btn.pack(side='left', padx=(0, 5))
 

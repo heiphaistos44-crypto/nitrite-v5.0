@@ -59,7 +59,7 @@
         },
         "Spybot Search & Destroy": {
             "description": "Détection et suppression de spywares et malwares",
-            "download_url": "https://download.spybot.info/SpybotSD2Setup.exe",
+            "download_url": "https://www.safer-networking.org/products/spybot-free-edition/download-mirror-1/",
             "install_args": "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-",
             "category": "Outils OrdiPlus",
             "essential": true,
@@ -67,7 +67,7 @@
             "admin_required": true,
             "winget_id": "Safer-Networking.Spybot",
             "winget_fallback_ids": ["SaferNetworking.SpybotSearchAndDestroy", "Spybot.SearchAndDestroy"],
-            "note": "Installation autonome: URL directe + WinGet (4 méthodes)",
+            "note": "Installation depuis site officiel Safer-Networking + WinGet fallback",
             "portable": false
         },
         "Adobe Acrobat Reader DC": {
