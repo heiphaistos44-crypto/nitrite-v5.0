@@ -1384,13 +1384,11 @@ class NiTriteGUIComplet:
         self.create_reparation_section()           # 6. reparation système
         self.create_maintenance_section()          # 7. maintenance et nettoyage
         self.create_diagnostics_section()          # 8. Diagnostics et info
-        self.create_utilitaires_systeme_section()  # 9. Utilitaire système
 
         # Autres sections (ordre standard)
         self.create_reseau_section()
         self.create_benchmark_section()
         self.create_fournisseurs_section()
-        self.create_depannage_section()
         self.create_documentation_section()
 
         # Activer le drag & drop pour les catégories et boutons
@@ -1730,6 +1728,9 @@ class NiTriteGUIComplet:
             ("⚡ Activate Windows", self.activate_windows),
             ("💾 Portables DB", self.show_portable_database_stats),
 
+            # Outils Microsoft
+            ("⚡ PowerToys", "https://github.com/microsoft/PowerToys/releases/latest"),
+
             # Office & Microsoft
             ("📦 Office FR", "https://gravesoft.dev/office_c2r_links#french-fr-fr"),
             ("📋 Office EN", "https://gravesoft.dev/office_c2r_links"),
@@ -1769,7 +1770,7 @@ class NiTriteGUIComplet:
         self.create_section("ACTIVATION & TÉLÉCHARGEMENTS", "🔑", buttons_data, is_web=False)
 
     def create_maintenance_section(self):
-        """Section Maintenance & Nettoyage avec 30+ outils"""
+        """Section Maintenance & Nettoyage - Outils Windows uniquement"""
         buttons_data = [
             # Nettoyage
             ("🗑️ Vider Corbeille", "PowerShell -Command \"Clear-RecycleBin -Force\""),
@@ -1786,28 +1787,12 @@ class NiTriteGUIComplet:
             ("📊 Defrag UI", "dfrgui"),
             ("⚡ Optimize All", "defrag /C /O"),
 
-            # Gestionnaires
+            # Gestionnaires Windows
             ("⚡ Task Manager", "taskmgr"),
             ("📈 Resource Monitor", "resmon"),
             ("🗂️ Storage Sense", "start ms-settings:storagesense"),
             ("🔌 Uninstall Apps", "appwiz.cpl"),
             ("💾 Disk Mgmt", "diskmgmt.msc"),
-
-            # Sites outils nettoyage
-            ("🧹 CCleaner", "https://www.ccleaner.com/ccleaner/download"),
-            ("💎 Wise Care 365", "https://www.wisecleaner.com/wise-care-365.html"),
-            ("🔧 Glary Utilities", "https://www.glarysoft.com/"),
-            ("⚡ IObit Uninstaller", "https://www.iobit.com/advanceduninstaller.php"),
-            ("🗑️ Revo Uninstaller", "https://www.revouninstaller.com/"),
-            ("💾 TreeSize Free", "https://www.jam-software.com/treesize_free"),
-            ("📊 WinDirStat", "https://windirstat.net/"),
-            ("🔍 SpaceSniffer", "http://www.uderzo.it/main_products/space_sniffer/"),
-            ("🧹 BleachBit", "https://www.bleachbit.org/"),
-            ("💿 Recuva", "https://www.ccleaner.com/recuva"),
-            ("🔧 Defraggler", "https://www.ccleaner.com/defraggler"),
-            ("⚡ Smart Defrag", "https://www.iobit.com/en/iobitsmartdefrag.php"),
-            ("📦 Auslogics BoostSpeed", "https://www.auslogics.com/en/software/boost-speed/"),
-            ("💎 Advanced SystemCare", "https://www.iobit.com/advancedsystemcarefree.php"),
         ]
         self.create_section("MAINTENANCE & NETTOYAGE", "🧹", buttons_data, is_web=False)
 
@@ -1885,7 +1870,7 @@ class NiTriteGUIComplet:
         self.create_section("DIAGNOSTICS & INFOS", "🔍", buttons_data, is_web=False)
 
     def create_reseau_section(self):
-        """Section Réseau & Internet - 60+ outils"""
+        """Section Réseau & Internet - Outils Windows + Speedtest"""
         buttons_data = [
             # Commandes Windows
             ("🌐 Ping Google", "ping 8.8.8.8 -n 10"),
@@ -1912,52 +1897,6 @@ class NiTriteGUIComplet:
             ("⚡ Comparitech", "https://www.comparitech.com/internet-providers/speed-test/"),
             ("⚡ M-Lab Test", "https://speed.measurementlab.net/"),
             ("🌐 Google Fiber", "https://fiber.google.com/speedtest/"),
-
-            # Network Tools
-            ("🔍 DNS Checker", "https://dnschecker.org/"),
-            ("🛠️ MX Toolbox", "https://mxtoolbox.com/"),
-            ("📡 Wireshark", "https://www.wireshark.org/download.html"),
-            ("📈 PingPlotter", "https://www.pingplotter.com/download"),
-            ("📡 Fing", "https://www.fing.com/products/fing-desktop"),
-            ("🔍 Advanced IP Scanner", "https://www.advanced-ip-scanner.com/"),
-            ("⚡ Angry IP Scanner", "https://angryip.org/"),
-            ("📊 GlassWire", "https://www.glasswire.com/download/"),
-            ("🌐 NetLimiter", "https://www.netlimiter.com/download"),
-            ("⚡ NetBalancer", "https://netbalancer.com/download"),
-
-            # IP & DNS
-            ("🌐 WhatIsMyIP", "https://www.whatismyip.com/"),
-            ("🌍 IP Location", "https://www.iplocation.net/"),
-            ("🔒 DNS Leak Test", "https://www.dnsleaktest.com/"),
-            ("🔒 IP Leak", "https://ipleak.net/"),
-            ("🔒 BrowserLeaks", "https://browserleaks.com/"),
-            ("🌐 IP Chicken", "https://www.ipchicken.com/"),
-            ("🌐 Geolocation", "https://www.geolocation.com/"),
-            ("🌍 IP2Location", "https://www.ip2location.com/"),
-
-            # WiFi Tools
-            ("📡 NetSpot", "https://www.netspotapp.com/"),
-            ("🌐 Acrylic WiFi", "https://www.acrylicwifi.com/"),
-            ("📡 inSSIDer", "https://www.metageek.com/products/inssider/"),
-
-            # Remote Access
-            ("💻 PuTTY", "https://www.putty.org/"),
-            ("📁 WinSCP", "https://winscp.net/"),
-            ("📦 FileZilla", "https://filezilla-project.org/"),
-            ("🌐 Hamachi", "https://www.vpn.net/"),
-            ("🔒 ZeroTier", "https://www.zerotier.com/"),
-            ("⚡ Tailscale", "https://tailscale.com/"),
-            ("🔐 OpenVPN", "https://openvpn.net/community-downloads/"),
-            ("🔒 WireGuard", "https://www.wireguard.com/install/"),
-
-            # Monitoring
-            ("📊 DownDetector", "https://downdetector.com/"),
-            ("📡 Packet Loss", "https://packetlosstest.com/"),
-            ("🌍 Traceroute", "https://www.traceroute-online.com/"),
-            ("🔍 Censys", "https://search.censys.io/"),
-            ("📡 Shodan", "https://www.shodan.io/"),
-            ("🔍 Hurricane Tools", "https://bgp.he.net/"),
-            ("📡 Router Check", "https://www.routercheck.com/"),
         ]
         self.create_section("RÉSEAU & INTERNET", "🌐", buttons_data, is_web=False)
 
