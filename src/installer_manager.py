@@ -893,7 +893,44 @@ class InstallerManager:
         except Exception as e:
             self.log_callback(f"❌ Erreur installation winget: {e}", "error")
             return False
-    
+
+    def install_via_chocolatey(self, choco_id, program_info):
+        """
+        Installe un programme via Chocolatey
+
+        Args:
+            choco_id: ID Chocolatey du programme
+            program_info: Informations du programme
+
+        Returns:
+            bool: True si l'installation a réussi
+        """
+        try:
+            self.log_callback(f"🍫 Installation via Chocolatey: {choco_id}", "info")
+
+            # Construire la commande chocolatey
+            cmd = ['choco', 'install', choco_id, '-y', '--no-progress', '--ignore-checksums']
+            self.log_callback(f"🔧 Commande Chocolatey: {' '.join(cmd)}", "info")
+
+            # Chocolatey nécessite toujours des privilèges admin
+            success, returncode, stdout, stderr = run_as_admin_silent(cmd, timeout=300)
+
+            if success or returncode == 0:
+                self.log_callback(f"✅ Installation réussie via Chocolatey", "success")
+                return True
+            else:
+                self.log_callback(f"❌ Erreur Chocolatey (code {returncode}):", "error")
+                self.log_callback(f"STDOUT: {stdout if stdout else '(vide)'}", "error")
+                self.log_callback(f"STDERR: {stderr if stderr else '(vide)'}", "error")
+                return False
+
+        except subprocess.TimeoutExpired:
+            self.log_callback(f"⏱️ Timeout installation Chocolatey pour {choco_id}", "warning")
+            return False
+        except Exception as e:
+            self.log_callback(f"❌ Erreur installation Chocolatey: {e}", "error")
+            return False
+
     def verify_file_hash(self, file_path, expected_hash):
         """
         Vérifie le hash SHA256 d'un fichier
