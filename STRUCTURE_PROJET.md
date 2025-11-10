@@ -17,9 +17,8 @@ nitrite-v5.0/
 │   ├── programs.json                 # 715 applications (25 catégories)
 │   └── config.json                   # Configuration utilisateur
 │
-├── 📂 scripts/                       # Scripts utilitaires et build
+├── 📂 scripts/                       # Scripts utilitaires
 │   ├── NiTrite_v12_Final.spec        # Config PyInstaller
-│   ├── build_nitrite_v12_final.py    # Script de build portable
 │   ├── create_icon.py                # Générateur d'icône V12
 │   ├── validate_programs.py          # Validation programs.json
 │   ├── generate_500plus_apps.py      # Générateur d'applications
@@ -58,15 +57,20 @@ nitrite-v5.0/
 ├── 📂 .github/                       # Configuration GitHub
 │   └── DESCRIPTION.md                # Description du dépôt
 │
-├── 📂 NiTrite_Autonome/              # Dossier application portable
-│   └── (généré après build)
-│
 ├── 📄 nitrite_complet.py             # Lanceur principal
 ├── 📄 LANCER.bat                     # Lanceur Windows
+├── 📄 build_nitrite_v12_final.py     # Script de build portable V12.0
 ├── 📄 requirements.txt               # Dépendances Python
 ├── 📄 README.md                      # README principal du projet
 ├── 📄 STRUCTURE_PROJET.md            # Ce fichier
 └── 📄 .gitignore                     # Exclusions Git
+
+📦 Après build (non versionné) :
+├── 📂 NiTriTe V12 Portable/          # Dossier application portable
+│   ├── NiTriTe V12.0.exe             # Exécutable autonome
+│   ├── Lancer NiTriTe.bat            # Lanceur rapide
+│   └── README.txt                    # Instructions
+└── 📦 NiTriTe V12 Portable.zip       # Archive pour distribution
 
 ```
 
@@ -138,7 +142,7 @@ Configuration utilisateur (préférences, ordre des sections, etc.)
 
 1. **`nitrite_complet.py`** : Lanceur Python principal
 2. **`LANCER.bat`** : Lanceur Windows (double-clic)
-3. **Build portable** : Exécutable autonome créé via `scripts/build_nitrite_v12_final.py`
+3. **`build_nitrite_v12_final.py`** : Script de build pour créer la version portable autonome
 
 ## 📝 Documentation
 
@@ -160,8 +164,8 @@ Configuration utilisateur (préférences, ordre des sections, etc.)
 1. **Développement** : Modifier les fichiers dans `src/`
 2. **Test** : Lancer via `nitrite_complet.py` ou `LANCER.bat`
 3. **Validation** : Exécuter `scripts/validate_programs.py`
-4. **Build** : Utiliser `scripts/build_nitrite_v12_final.py`
-5. **Distribution** : Dossier `NiTrite_Autonome/` contient l'exécutable portable
+4. **Build** : Utiliser `build_nitrite_v12_final.py` (à la racine)
+5. **Distribution** : Le dossier `NiTriTe V12 Portable/` et le ZIP sont créés automatiquement
 
 ## 📦 Gestion des Versions
 
