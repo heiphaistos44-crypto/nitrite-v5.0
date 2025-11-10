@@ -67,7 +67,8 @@
             "admin_required": true,
             "winget_id": "Safer-Networking.Spybot",
             "winget_fallback_ids": ["SaferNetworking.SpybotSearchAndDestroy", "Spybot.SearchAndDestroy"],
-            "note": "Installation avec URL directe + WinGet fallback",
+            "choco_id": "spybot",
+            "note": "Installation multi-méthodes: URL directe + WinGet + Chocolatey",
             "portable": false
         },
         "Adobe Acrobat Reader DC": {
