@@ -498,11 +498,22 @@ class NiTriteGUIComplet:
                 var = tk.BooleanVar()
                 self.program_vars[program_name] = var
 
-                # Frame horizontal pour checkbox + bouton web
+                # Frame horizontal pour bouton web + checkbox
                 checkbox_frame = ttk.Frame(prog_frame)
                 checkbox_frame.pack(anchor='w', fill='x')
 
-                # Checkbox avec nom du programme (POLICE PLUS PETITE)
+                # Bouton web À GAUCHE de la checkbox (plus petit)
+                download_url = program_info.get('download_url', '')
+                if download_url:
+                    web_btn = ttk.Button(
+                        checkbox_frame,
+                        text="🌐",
+                        command=lambda url=download_url: self.open_download_link(url),
+                        width=2
+                    )
+                    web_btn.pack(side='left', padx=(0, 5))
+
+                # Checkbox avec nom du programme (à droite du bouton web)
                 checkbox = ttk.Checkbutton(
                     checkbox_frame,
                     text=program_name,
@@ -510,17 +521,6 @@ class NiTriteGUIComplet:
                     style='Program.TCheckbutton'
                 )
                 checkbox.pack(side='left', anchor='w')
-
-                # Bouton web à côté de chaque checkbox
-                download_url = program_info.get('download_url', '')
-                if download_url:
-                    web_btn = ttk.Button(
-                        checkbox_frame,
-                        text="🌐",
-                        command=lambda url=download_url: self.open_download_link(url),
-                        width=3
-                    )
-                    web_btn.pack(side='left', padx=(5, 0))
 
                 # Configurer la police plus petite
                 checkbox.configure(style='Program.TCheckbutton')
@@ -1375,24 +1375,22 @@ class NiTriteGUIComplet:
     def create_all_tools_sections(self):
         """Crée toutes les sections d'outils avec BEAUCOUP plus de boutons"""
 
-        # Créer toutes les sections
-        self.create_reparation_section()
-        self.create_activation_section()
-        self.create_maintenance_section()
-        self.create_diagnostics_section()
+        # Ordre personnalisé des sections (selon demande utilisateur)
+        self.create_activation_section()           # 1. Activation et Téléchargements
+        self.create_winget_section()               # 2. Winget - Package Manager
+        self.create_drivers_section()              # 3. drivers et pilotes
+        self.create_parametres_section()           # 4. parametre Windows
+        self.create_support_section()              # 5. Support constructeur
+        self.create_reparation_section()           # 6. reparation système
+        self.create_maintenance_section()          # 7. maintenance et nettoyage
+        self.create_diagnostics_section()          # 8. Diagnostics et info
+        self.create_utilitaires_systeme_section()  # 9. Utilitaire système
+
+        # Autres sections (ordre standard)
         self.create_reseau_section()
-        self.create_securite_section()
         self.create_benchmark_section()
-        self.create_utilitaires_systeme_section()
-        self.create_multimedia_section()
-        self.create_bureautique_section()
-        self.create_developpement_web_section()
-        self.create_winget_section()
-        self.create_parametres_section()
-        self.create_support_section()
         self.create_fournisseurs_section()
         self.create_depannage_section()
-        self.create_drivers_section()
         self.create_documentation_section()
 
         # Activer le drag & drop pour les catégories et boutons
