@@ -144,7 +144,7 @@ class NiTriteGUIComplet:
     
     def setup_window(self):
         """Configure la fenêtre principale en plein écran"""
-        self.root.title("🚀 NiTriTe V5.0 - Installateur Automatique de Programmes (80+ applications)")
+        self.root.title("🚀 NiTriTe v12 Final - Installateur Automatique de Programmes (80+ applications)")
         
         # MAXIMISER complètement la fenêtre
         self.root.state('zoomed')
@@ -426,7 +426,7 @@ class NiTriteGUIComplet:
         # 🎯 Titre principal - ULTRA MODERNE
         title_label = tk.Label(
             header_outer,
-            text=f"🚀 NiTriTe V.11 - INTERFACE MODERNE",
+            text=f"🚀 NiTriTe v12 Final - INTERFACE MODERNE",
             font=('Segoe UI', 24, 'bold'),
             fg=self.ACCENT_ORANGE,
             bg=self.DARK_BG2,

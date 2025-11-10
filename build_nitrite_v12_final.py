@@ -16,7 +16,7 @@ if sys.platform == 'win32':
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 print("=" * 70)
-print("    🚀 BUILD EXÉCUTABLE AUTONOME - NiTrite v2.0")
+print("    🚀 BUILD EXÉCUTABLE AUTONOME - NiTrite v12 Final")
 print("=" * 70)
 print()
 
@@ -33,7 +33,7 @@ print()
 
 # Étape 2: Nettoyer les anciens builds
 print("[2/5] Nettoyage des anciens builds...")
-for folder in ["build", "dist", "NiTrite_Autonome"]:
+for folder in ["build", "dist", "NiTrite_v12_Final"]:
     if os.path.exists(folder):
         shutil.rmtree(folder)
         print(f"   🗑️  {folder}/ supprimé")
@@ -49,7 +49,7 @@ cmd = [
     sys.executable, "-m", "PyInstaller",
     "--noconfirm",
     "--clean",
-    "scripts/NiTrite_OrdiPlus_v2.spec"
+    "scripts/NiTrite_v12_Final.spec"
 ]
 
 result = subprocess.run(cmd, capture_output=False)
@@ -66,11 +66,11 @@ print()
 print("[4/5] 📦 Création du package...")
 
 # Créer le dossier
-os.makedirs("NiTrite_Autonome", exist_ok=True)
+os.makedirs("NiTrite_v12_Final", exist_ok=True)
 
 # Copier l'exécutable
-exe_source = Path("dist/NiTrite_OrdiPlus_v2.exe")
-exe_dest = Path("NiTrite_Autonome/NiTrite_OrdiPlus_v2.exe")
+exe_source = Path("dist/NiTrite_v12_Final.exe")
+exe_dest = Path("NiTrite_v12_Final/NiTrite_v12_Final.exe")
 
 if exe_source.exists():
     shutil.copy2(exe_source, exe_dest)
@@ -82,31 +82,31 @@ else:
 
 # Créer le lanceur
 launcher_content = """@echo off
-start "" "NiTrite_OrdiPlus_v2.exe"
+start "" "NiTrite_v12_Final.exe"
 """
-with open("NiTrite_Autonome/LANCER_NITRITE.bat", "w") as f:
+with open("NiTrite_v12_Final/NiTrite_v12_Final.bat", "w") as f:
     f.write(launcher_content)
 print("   ✅ Lanceur créé")
 
 # Créer le README
 readme_content = """╔════════════════════════════════════════════════════════════════╗
-║  🚀 NiTrite OrdiPlus v2.0 - VERSION TOTALEMENT AUTONOME       ║
+║  🚀 NiTrite v12 Final - VERSION TOTALEMENT AUTONOME          ║
 ╚════════════════════════════════════════════════════════════════╝
 
 ✅ AUCUNE INSTALLATION REQUISE !
 
 Cette version inclut TOUT :
   ✅ Python embarqué
-  ✅ Tkinter (interface graphique)
+  ✅ Tkinter (interface graphique moderne)
   ✅ Toutes les dépendances
-  ✅ Base de données de 304 programmes
+  ✅ Base de données de 80+ programmes
 
 ════════════════════════════════════════════════════════════════
 🚀 UTILISATION
 ════════════════════════════════════════════════════════════════
 
-Option 1 : Double-clic sur LANCER_NITRITE.bat
-Option 2 : Double-clic sur NiTrite_OrdiPlus_v2.exe
+Option 1 : Double-clic sur NiTrite_v12_Final.bat
+Option 2 : Double-clic sur NiTrite_v12_Final.exe
 
 C'est tout ! L'application s'ouvre immédiatement.
 
@@ -124,17 +124,18 @@ C'est tout ! L'application s'ouvre immédiatement.
 📋 FONCTIONNALITÉS
 ════════════════════════════════════════════════════════════════
 
-🌐 304 programmes disponibles
-📦 Installation automatique via WinGet en fallback
-👤 Interface graphique intuitive
+🌐 80+ programmes disponibles
+📦 Installation automatique via WinGet
+👤 Interface graphique moderne ultra-esthétique
 ⚡ Multi-threading pour vitesse
 🔒 Gestion automatique des privilèges admin
+🎨 Design sombre premium avec effets modernes
 
 ════════════════════════════════════════════════════════════════
-© 2025 NiTrite OrdiPlus - Installation simplifiée Windows
+© 2025 NiTrite v12 Final - Installation simplifiée Windows
 ════════════════════════════════════════════════════════════════
 """
-with open("NiTrite_Autonome/README.txt", "w", encoding="utf-8") as f:
+with open("NiTrite_v12_Final/README.txt", "w", encoding="utf-8") as f:
     f.write(readme_content)
 print("   ✅ README créé")
 print()
@@ -142,8 +143,8 @@ print()
 # Étape 5: Créer le ZIP
 print("[5/5] 📦 Compression en ZIP...")
 try:
-    shutil.make_archive("NiTrite_Autonome_v2.0", "zip", "NiTrite_Autonome")
-    zip_size = Path("NiTrite_Autonome_v2.0.zip").stat().st_size / (1024 * 1024)
+    shutil.make_archive("NiTrite_v12_Final", "zip", "NiTrite_v12_Final")
+    zip_size = Path("NiTrite_v12_Final.zip").stat().st_size / (1024 * 1024)
     print(f"✅ ZIP créé ({zip_size:.1f} MB)")
 except Exception as e:
     print(f"⚠️  Erreur lors de la création du ZIP: {e}")
@@ -163,21 +164,21 @@ print("=" * 70)
 print()
 print("📊 RÉSULTATS :")
 print()
-print("   📂 NiTrite_Autonome/")
-print(f"      ├── NiTrite_OrdiPlus_v2.exe  (~{size_mb:.0f} MB)")
-print("      ├── LANCER_NITRITE.bat")
+print("   📂 NiTrite_v12_Final/")
+print(f"      ├── NiTrite_v12_Final.exe  (~{size_mb:.0f} MB)")
+print("      ├── NiTrite_v12_Final.bat")
 print("      └── README.txt")
 print()
-print(f"   📦 NiTrite_Autonome_v2.0.zip    (~{zip_size:.0f} MB)")
+print(f"   📦 NiTrite_v12_Final.zip    (~{zip_size:.0f} MB)")
 print()
 print("=" * 70)
 print()
 print("🎯 POUR TESTER :")
-print("   cd NiTrite_Autonome")
-print("   LANCER_NITRITE.bat")
+print("   cd NiTrite_v12_Final")
+print("   NiTrite_v12_Final.bat")
 print()
 print("📤 POUR DISTRIBUER :")
-print("   Partagez : NiTrite_Autonome_v2.0.zip")
+print("   Partagez : NiTrite_v12_Final.zip")
 print()
 print("✨ L'utilisateur n'a RIEN à installer !")
 print("   Juste décompresser et double-clic ! 🚀")

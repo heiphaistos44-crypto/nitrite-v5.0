@@ -39,7 +39,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='NiTrite_OrdiPlus_v2',
+    name='NiTrite_v12_Final',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

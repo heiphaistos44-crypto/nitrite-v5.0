@@ -1,5 +1,5 @@
 """
-Lanceur NiTrite v.2 - VERSION COMPLÈTE
+Lanceur NiTrite v12 Final - VERSION COMPLÈTE
 Affiche TOUS les programmes disponibles (80+)
 """
 
