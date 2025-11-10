@@ -762,7 +762,9 @@ class NiTriteGUIComplet:
                         args=(
                             programs_to_install,
                             self.update_progress,
-                            self.on_installation_finished
+                            self.on_installation_finished,
+                            self.successful_installs,  # Liste des succès
+                            self.failed_installs        # Liste des échecs
                         ),
                         daemon=True
                     )
