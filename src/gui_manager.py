@@ -20,19 +20,46 @@ from PIL import Image, ImageTk
 class NiTriteGUIComplet:
     """Interface graphique complète affichant TOUS les programmes"""
     
-    # Couleurs du thème Ordi Plus (plus foncé que le site)
-    DARK_BG = '#1a1a1a'          # Fond principal - Gris très foncé
-    DARK_BG2 = '#2a2a2a'         # Fond secondaire - Gris foncé
-    DARK_BG3 = '#333333'         # Fond tertiaire - Gris moyen foncé
+    # 🎨 PALETTE DE COULEURS MODERNE - Thème Sombre Premium
+    # Fonds avec profondeur
+    DARK_BG = '#0f0f0f'          # Fond principal - Noir profond
+    DARK_BG2 = '#1a1a1a'         # Fond secondaire - Gris très foncé
+    DARK_BG3 = '#252525'         # Fond tertiaire - Gris foncé élégant
+    DARK_BG4 = '#2f2f2f'         # Fond quaternaire - Gris moyen
+
+    # Textes avec hiérarchie
     DARK_FG = '#ffffff'          # Texte principal - Blanc pur
-    DARK_FG2 = '#cccccc'         # Texte secondaire - Gris clair
-    ACCENT_ORANGE = '#FF6B00'    # Orange Ordi Plus (couleur principale)
-    ACCENT_BLUE = '#003366'      # Bleu foncé Ordi Plus
-    ACCENT_GREEN = '#00CC66'     # Vert succès
-    ACCENT_RED = '#ff3333'       # Rouge erreur
-    ACCENT_YELLOW = '#FFB800'    # Jaune warning (variante orange)
-    PROGRESS_GREEN = '#2ecc71'   # Vert barre de progression
-    BORDER = '#444444'           # Bordures
+    DARK_FG2 = '#e0e0e0'         # Texte secondaire - Blanc cassé
+    DARK_FG3 = '#b0b0b0'         # Texte tertiaire - Gris clair
+
+    # Accents vibrants avec gradients
+    ACCENT_ORANGE = '#FF6B00'    # Orange Ordi Plus - Principal
+    ACCENT_ORANGE_LIGHT = '#FF8533'  # Orange clair - Hover
+    ACCENT_ORANGE_DARK = '#CC5500'   # Orange foncé - Active
+
+    ACCENT_BLUE = '#0066cc'      # Bleu moderne
+    ACCENT_BLUE_LIGHT = '#3385db' # Bleu clair - Hover
+    ACCENT_BLUE_DARK = '#004d99'  # Bleu foncé - Active
+
+    ACCENT_GREEN = '#00e676'     # Vert néon - Succès
+    ACCENT_GREEN_LIGHT = '#33eb8f' # Vert clair
+    ACCENT_GREEN_DARK = '#00b359'  # Vert foncé
+
+    ACCENT_RED = '#ff1744'       # Rouge vif - Erreur
+    ACCENT_YELLOW = '#ffd600'    # Jaune or - Warning
+    ACCENT_PURPLE = '#7c4dff'    # Violet - Premium
+    ACCENT_CYAN = '#00e5ff'      # Cyan - Info
+
+    # Barre de progression animée
+    PROGRESS_BG = '#1a1a1a'      # Fond barre
+    PROGRESS_FILL = '#00e676'    # Remplissage vert néon
+    PROGRESS_GLOW = '#33eb8f'    # Lueur verte
+
+    # Bordures et ombres
+    BORDER = '#404040'           # Bordure principale
+    BORDER_LIGHT = '#505050'     # Bordure claire
+    SHADOW = '#000000'           # Ombre portée
+    HIGHLIGHT = '#ffffff'        # Surbrillance
     
     def __init__(self, root, installer_manager=None, config_manager=None):
         self.root = root
@@ -145,87 +172,172 @@ class NiTriteGUIComplet:
             self.logger.warning(f"Impossible de charger l'icône: {e}")
     
     def setup_styles(self):
-        """Configure les styles pour mode sombre"""
+        """🎨 Configure les styles ULTRA-MODERNES pour mode sombre premium"""
         style = ttk.Style()
         style.theme_use('clam')
-        
-        # Configuration globale MODE SOMBRE
+
+        # ═══════════════════════════════════════════════════════════
+        # 🌟 CONFIGURATION GLOBALE MODE SOMBRE PREMIUM
+        # ═══════════════════════════════════════════════════════════
         style.configure('.',
                        background=self.DARK_BG,
                        foreground=self.DARK_FG,
                        fieldbackground=self.DARK_BG2,
-                       bordercolor=self.BORDER,
-                       darkcolor=self.DARK_BG,
-                       lightcolor=self.DARK_BG3)
-        
-        # Labels
+                       bordercolor=self.BORDER_LIGHT,
+                       darkcolor=self.DARK_BG2,
+                       lightcolor=self.DARK_BG3,
+                       relief='flat')
+
+        # ═══════════════════════════════════════════════════════════
+        # 📝 LABELS MODERNISÉS
+        # ═══════════════════════════════════════════════════════════
         style.configure('TLabel',
-                       background=self.DARK_BG,
-                       foreground=self.DARK_FG)
-        
-        # Frames
-        style.configure('TFrame',
-                       background=self.DARK_BG)
-        
-        # LabelFrames
-        style.configure('TLabelframe',
-                       background=self.DARK_BG,
-                       foreground=self.ACCENT_BLUE,
-                       bordercolor=self.BORDER)
-        style.configure('TLabelframe.Label',
-                       background=self.DARK_BG,
-                       foreground=self.ACCENT_BLUE,
-                       font=('Segoe UI', 10, 'bold'))
-        
-        # Boutons
-        style.configure('TButton',
-                       background=self.DARK_BG2,
-                       foreground=self.DARK_FG,
-                       bordercolor=self.BORDER,
-                       font=('Segoe UI', 8))
-        style.map('TButton',
-                 background=[('active', self.DARK_BG3), ('pressed', self.ACCENT_ORANGE)],  # Orange au clic
-                 foreground=[('active', self.DARK_FG)])
-        
-        # Checkbuttons
-        style.configure('TCheckbutton',
                        background=self.DARK_BG,
                        foreground=self.DARK_FG,
                        font=('Segoe UI', 9))
+
+        # ═══════════════════════════════════════════════════════════
+        # 📦 FRAMES ET CONTENEURS
+        # ═══════════════════════════════════════════════════════════
+        style.configure('TFrame',
+                       background=self.DARK_BG,
+                       borderwidth=0)
+
+        # ═══════════════════════════════════════════════════════════
+        # 🏷️ LABELFRAMES AVEC BORDURES ÉLÉGANTES
+        # ═══════════════════════════════════════════════════════════
+        style.configure('TLabelframe',
+                       background=self.DARK_BG,
+                       foreground=self.ACCENT_BLUE_LIGHT,
+                       bordercolor=self.BORDER_LIGHT,
+                       borderwidth=2,
+                       relief='solid')
+        style.configure('TLabelframe.Label',
+                       background=self.DARK_BG,
+                       foreground=self.ACCENT_BLUE_LIGHT,
+                       font=('Segoe UI', 11, 'bold'))
+
+        # ═══════════════════════════════════════════════════════════
+        # 🔘 BOUTONS STANDARDS MODERNISÉS
+        # ═══════════════════════════════════════════════════════════
+        style.configure('TButton',
+                       background=self.DARK_BG3,
+                       foreground=self.DARK_FG,
+                       bordercolor=self.BORDER_LIGHT,
+                       borderwidth=1,
+                       relief='raised',
+                       font=('Segoe UI', 9, 'bold'),
+                       padding=(10, 5))
+        style.map('TButton',
+                 background=[
+                     ('active', self.DARK_BG4),
+                     ('pressed', self.ACCENT_ORANGE),
+                     ('disabled', self.DARK_BG2)
+                 ],
+                 foreground=[
+                     ('active', self.DARK_FG),
+                     ('pressed', '#ffffff'),
+                     ('disabled', self.DARK_FG3)
+                 ],
+                 bordercolor=[
+                     ('active', self.ACCENT_ORANGE_LIGHT),
+                     ('pressed', self.ACCENT_ORANGE_DARK)
+                 ])
+
+        # ═══════════════════════════════════════════════════════════
+        # ✅ CHECKBUTTONS PERSONNALISÉS
+        # ═══════════════════════════════════════════════════════════
+        style.configure('TCheckbutton',
+                       background=self.DARK_BG,
+                       foreground=self.DARK_FG2,
+                       font=('Segoe UI', 9),
+                       borderwidth=0,
+                       indicatorcolor=self.ACCENT_GREEN,
+                       indicatorrelief='flat')
         style.map('TCheckbutton',
-                 background=[('active', self.DARK_BG)])
-        
-        # Styles spécialisés
-        style.configure('Title.TLabel', 
-                       font=('Segoe UI', 16, 'bold'),
-                       foreground=self.ACCENT_ORANGE,  # Orange Ordi Plus pour le titre
-                       background=self.DARK_BG)
-        
-        style.configure('Category.TLabel', 
-                       font=('Segoe UI', 11, 'bold'),
-                       foreground=self.ACCENT_ORANGE,  # Orange Ordi Plus pour les catégories
-                       background=self.DARK_BG)
-        
+                 background=[('active', self.DARK_BG)],
+                 foreground=[
+                     ('active', self.DARK_FG),
+                     ('selected', self.ACCENT_GREEN_LIGHT)
+                 ])
+
+        # ═══════════════════════════════════════════════════════════
+        # 🎯 TITRE PRINCIPAL - ULTRA MODERNE
+        # ═══════════════════════════════════════════════════════════
+        style.configure('Title.TLabel',
+                       font=('Segoe UI', 20, 'bold'),
+                       foreground=self.ACCENT_ORANGE,
+                       background=self.DARK_BG,
+                       padding=(0, 10))
+
+        # ═══════════════════════════════════════════════════════════
+        # 📂 CATÉGORIES - DESIGN MODERNE
+        # ═══════════════════════════════════════════════════════════
+        style.configure('Category.TLabel',
+                       font=('Segoe UI', 12, 'bold'),
+                       foreground=self.ACCENT_ORANGE_LIGHT,
+                       background=self.DARK_BG3,
+                       padding=(15, 8),
+                       relief='flat')
+
+        # ═══════════════════════════════════════════════════════════
+        # 🚀 BOUTONS D'ACTION - EFFET 3D PREMIUM
+        # ═══════════════════════════════════════════════════════════
         style.configure('Action.TButton',
-                       font=('Segoe UI', 11, 'bold'),
-                       padding=8,
-                       background=self.ACCENT_ORANGE,  # Orange Ordi Plus pour les boutons d'action
-                       foreground='#ffffff')
+                       font=('Segoe UI', 12, 'bold'),
+                       padding=(20, 12),
+                       background=self.ACCENT_ORANGE,
+                       foreground='#ffffff',
+                       borderwidth=2,
+                       relief='raised',
+                       bordercolor=self.ACCENT_ORANGE_DARK)
         style.map('Action.TButton',
-                 background=[('active', '#ff8533'), ('pressed', '#cc5500')])  # Variations d'orange
+                 background=[
+                     ('active', self.ACCENT_ORANGE_LIGHT),
+                     ('pressed', self.ACCENT_ORANGE_DARK),
+                     ('disabled', self.DARK_BG3)
+                 ],
+                 foreground=[
+                     ('active', '#ffffff'),
+                     ('pressed', '#ffffff'),
+                     ('disabled', self.DARK_FG3)
+                 ],
+                 relief=[
+                     ('pressed', 'sunken')
+                 ],
+                 bordercolor=[
+                     ('active', self.ACCENT_ORANGE_LIGHT),
+                     ('pressed', self.ACCENT_ORANGE)
+                 ])
 
-        # Barre de progression verte
+        # ═══════════════════════════════════════════════════════════
+        # 📊 BARRE DE PROGRESSION - DESIGN FUTURISTE
+        # ═══════════════════════════════════════════════════════════
         style.configure('Green.Horizontal.TProgressbar',
-                       background=self.PROGRESS_GREEN,
-                       troughcolor=self.DARK_BG2,
-                       bordercolor=self.BORDER,
-                       darkcolor=self.PROGRESS_GREEN,
-                       lightcolor=self.PROGRESS_GREEN,
-                       thickness=20)
+                       background=self.PROGRESS_FILL,
+                       troughcolor=self.PROGRESS_BG,
+                       bordercolor=self.BORDER_LIGHT,
+                       darkcolor=self.PROGRESS_FILL,
+                       lightcolor=self.PROGRESS_GLOW,
+                       thickness=35,
+                       borderwidth=2,
+                       relief='flat')
 
+        # ═══════════════════════════════════════════════════════════
+        # 🎯 BOUTON DE SÉLECTION CATÉGORIE
+        # ═══════════════════════════════════════════════════════════
         style.configure('Select.TButton',
                        font=('Segoe UI', 9, 'bold'),
-                       padding=4)
+                       padding=(8, 4),
+                       background=self.ACCENT_GREEN,
+                       foreground='#ffffff',
+                       borderwidth=1,
+                       relief='raised')
+        style.map('Select.TButton',
+                 background=[
+                     ('active', self.ACCENT_GREEN_LIGHT),
+                     ('pressed', self.ACCENT_GREEN_DARK)
+                 ])
     
     def load_all_programs(self):
         """Charge TOUS les programmes depuis programs.json"""
@@ -295,31 +407,57 @@ class NiTriteGUIComplet:
         self.create_tools_panel_in_container(tools_container)
     
     def create_header(self, parent):
-        """Crée l'en-tête"""
-        header_frame = ttk.Frame(parent)
-        header_frame.grid(row=0, column=0, sticky="ew", pady=(0, 5))
-        
+        """🎨 Crée l'en-tête ULTRA-MODERNE avec design premium"""
+        # Frame principal avec fond dégradé simulé
+        header_outer = tk.Frame(
+            parent,
+            bg=self.DARK_BG2,
+            relief='raised',
+            bd=3,
+            highlightthickness=2,
+            highlightbackground=self.ACCENT_ORANGE
+        )
+        header_outer.grid(row=0, column=0, sticky="ew", pady=(5, 10), padx=10)
+
         # Calcul du nombre total de programmes
-        total_programs = sum(len(progs) if isinstance(progs, dict) else 0 
+        total_programs = sum(len(progs) if isinstance(progs, dict) else 0
                            for progs in self.programs.values())
-        
-        # Titre MODE SOMBRE
-        title_label = ttk.Label(
-            header_frame,
-            text=f"🎯 NITRITE v.2 - {total_programs} APPLICATIONS",
-            style='Title.TLabel'
+
+        # 🎯 Titre principal - ULTRA MODERNE
+        title_label = tk.Label(
+            header_outer,
+            text=f"🚀 NiTriTe V.11 - INTERFACE MODERNE",
+            font=('Segoe UI', 24, 'bold'),
+            fg=self.ACCENT_ORANGE,
+            bg=self.DARK_BG2,
+            pady=15
         )
         title_label.pack()
-        
-        # Sous-titre MODE SOMBRE
-        subtitle_label = ttk.Label(
-            header_frame,
-            text="Installation silencieuse • Sources officielles",
-            font=('Segoe UI', 9),
-            foreground=self.DARK_FG2,
-            background=self.DARK_BG
+
+        # Badge compteur de programmes
+        count_badge = tk.Label(
+            header_outer,
+            text=f"⭐ {total_programs} APPLICATIONS DISPONIBLES ⭐",
+            font=('Segoe UI', 14, 'bold'),
+            fg='#ffffff',
+            bg=self.ACCENT_ORANGE,
+            padx=20,
+            pady=8,
+            relief='raised',
+            bd=2
         )
-        subtitle_label.pack(pady=(2, 0))
+        count_badge.pack(pady=(0, 10))
+
+        # 💫 Sous-titre élégant
+        subtitle_label = tk.Label(
+            header_outer,
+            text="✨ Installation Silencieuse • Sources Officielles • Design Premium ✨",
+            font=('Segoe UI', 11, 'italic'),
+            fg=self.ACCENT_CYAN,
+            bg=self.DARK_BG2,
+            pady=10
+        )
+        subtitle_label.pack()
     
     def create_programs_area_in_container(self, parent):
         """Crée la zone des programmes avec TOUS les programmes affichés"""
@@ -425,43 +563,89 @@ class NiTriteGUIComplet:
         for category, programs in sorted_categories:
             icon = category_icons.get(category, '📦')
             
-            # Titre de catégorie avec bouton plier/déplier MODE SOMBRE
-            category_header = ttk.Frame(self.scrollable_frame)
-            category_header.grid(row=row, column=0, sticky="ew", pady=(8, 3), padx=5)
+            # 🎨 Header de catégorie ULTRA-MODERNE avec fond dégradé
+            category_header = tk.Frame(
+                self.scrollable_frame,
+                bg=self.DARK_BG3,
+                relief='raised',
+                bd=2,
+                highlightthickness=1,
+                highlightbackground=self.ACCENT_ORANGE
+            )
+            category_header.grid(row=row, column=0, sticky="ew", pady=(10, 5), padx=5)
             category_header.grid_columnconfigure(1, weight=1)
-            
-            # Bouton plier/déplier
-            collapse_btn = ttk.Button(
+
+            # 🔽 Bouton plier/déplier moderne avec style
+            collapse_btn = tk.Button(
                 category_header,
                 text="▼",
                 width=3,
+                height=1,
+                bg=self.ACCENT_ORANGE,
+                fg='#ffffff',
+                activebackground=self.ACCENT_ORANGE_LIGHT,
+                activeforeground='#ffffff',
+                font=('Segoe UI', 11, 'bold'),
+                relief='raised',
+                bd=2,
+                cursor='hand2',
                 command=lambda cat=category: self.toggle_category(cat)
             )
-            collapse_btn.grid(row=0, column=0, padx=(0, 5))
-            
-            # Label de catégorie MODE SOMBRE
-            category_label = ttk.Label(
+            collapse_btn.grid(row=0, column=0, padx=8, pady=5)
+
+            # Effet de survol pour bouton plier/déplier
+            def collapse_enter(e):
+                e.widget.config(bg=self.ACCENT_ORANGE_LIGHT, relief='raised', bd=3)
+            def collapse_leave(e):
+                e.widget.config(bg=self.ACCENT_ORANGE, relief='raised', bd=2)
+
+            collapse_btn.bind("<Enter>", collapse_enter)
+            collapse_btn.bind("<Leave>", collapse_leave)
+
+            # 📂 Label de catégorie avec fond et style moderne
+            category_label = tk.Label(
                 category_header,
-                text=f"{icon} {category.upper()} - {len(programs)} programmes",
-                style='Category.TLabel',
-                font=('Segoe UI', 11, 'bold')
+                text=f"  {icon}  {category.upper()}  •  {len(programs)} programmes",
+                font=('Segoe UI', 13, 'bold'),
+                fg=self.ACCENT_ORANGE_LIGHT,
+                bg=self.DARK_BG3,
+                anchor='w',
+                padx=10
             )
-            category_label.grid(row=0, column=1, sticky="w")
-            
-            # Bouton sélectionner tout dans cette catégorie
-            select_cat_btn = ttk.Button(
+            category_label.grid(row=0, column=1, sticky="ew", padx=10, pady=5)
+
+            # ✅ Bouton sélectionner tout - Style moderne
+            select_cat_btn = tk.Button(
                 category_header,
-                text="✓ Tout",
-                width=8,
+                text="✓ Tout sélectionner",
+                font=('Segoe UI', 10, 'bold'),
+                bg=self.ACCENT_GREEN,
+                fg='#ffffff',
+                activebackground=self.ACCENT_GREEN_LIGHT,
+                activeforeground='#ffffff',
+                relief='raised',
+                bd=2,
+                cursor='hand2',
+                padx=15,
+                pady=5,
                 command=lambda c=category: self.select_category(c)
             )
-            select_cat_btn.grid(row=0, column=2, padx=(5, 0))
+            select_cat_btn.grid(row=0, column=2, padx=8, pady=5)
+
+            # Effet de survol pour bouton sélection
+            def select_enter(e):
+                e.widget.config(bg=self.ACCENT_GREEN_LIGHT, relief='raised', bd=3)
+            def select_leave(e):
+                e.widget.config(bg=self.ACCENT_GREEN, relief='raised', bd=2)
+
+            select_cat_btn.bind("<Enter>", select_enter)
+            select_cat_btn.bind("<Leave>", select_leave)
             
             row += 1
-            
-            # Ligne de séparation MODE SOMBRE
-            separator = ttk.Separator(self.scrollable_frame, orient='horizontal')
-            separator.grid(row=row, column=0, sticky="ew", pady=(0, 3))
+
+            # 🌈 Ligne de séparation moderne avec dégradé (simulé par Frame)
+            separator_frame = tk.Frame(self.scrollable_frame, height=2, bg=self.ACCENT_ORANGE, relief='flat')
+            separator_frame.grid(row=row, column=0, sticky="ew", pady=(2, 8), padx=20)
             row += 1
             
             # Frame pour les programmes de cette catégorie MODE SOMBRE
@@ -502,7 +686,7 @@ class NiTriteGUIComplet:
                 checkbox_frame = ttk.Frame(prog_frame)
                 checkbox_frame.pack(anchor='w', fill='x')
 
-                # Bouton web À GAUCHE de la checkbox (même taille que checkbox)
+                # 🌐 Bouton web moderne avec effet 3D et survol
                 download_url = program_info.get('download_url', '')
                 if download_url:
                     web_btn = tk.Button(
@@ -511,16 +695,33 @@ class NiTriteGUIComplet:
                         command=lambda url=download_url: self.open_download_link(url),
                         width=2,
                         height=1,
-                        bg=self.DARK_BG3,
-                        fg=self.DARK_FG,
-                        activebackground=self.ACCENT_ORANGE,
-                        activeforeground='white',
-                        relief='flat',
-                        bd=1,
-                        font=('Segoe UI', 8),
-                        cursor='hand2'
+                        bg=self.ACCENT_BLUE,
+                        fg='#ffffff',
+                        activebackground=self.ACCENT_BLUE_LIGHT,
+                        activeforeground='#ffffff',
+                        relief='raised',
+                        bd=2,
+                        font=('Segoe UI', 10, 'bold'),
+                        cursor='hand2',
+                        highlightthickness=0,
+                        highlightbackground=self.ACCENT_BLUE_LIGHT
                     )
                     web_btn.pack(side='left', padx=(0, 5))
+
+                    # Effets de survol modernes
+                    def on_enter(e):
+                        e.widget.config(bg=self.ACCENT_BLUE_LIGHT, relief='raised', bd=3)
+                    def on_leave(e):
+                        e.widget.config(bg=self.ACCENT_BLUE, relief='raised', bd=2)
+                    def on_press(e):
+                        e.widget.config(relief='sunken', bd=2)
+                    def on_release(e):
+                        e.widget.config(relief='raised', bd=3)
+
+                    web_btn.bind("<Enter>", on_enter)
+                    web_btn.bind("<Leave>", on_leave)
+                    web_btn.bind("<ButtonPress-1>", on_press)
+                    web_btn.bind("<ButtonRelease-1>", on_release)
 
                 # Checkbox avec nom du programme (à droite du bouton web)
                 checkbox = ttk.Checkbutton(
@@ -592,72 +793,93 @@ class NiTriteGUIComplet:
             self.main_canvas.configure(scrollregion=self.main_canvas.bbox("all"))
     
     def create_action_bar(self, parent):
-        """Crée la barre d'actions"""
-        action_frame = ttk.Frame(parent)
-        action_frame.grid(row=1, column=0, sticky="ew", pady=(5, 0))
-        action_frame.grid_columnconfigure(1, weight=1)
-        
-        # Label de sélection (PLUS COMPACT)
-        self.selection_label = ttk.Label(
-            action_frame,
-            text="0 programme(s) sélectionné(s)",
-            font=('Segoe UI', 11, 'bold'),
-            foreground='#2c3e50'
+        """🎨 Crée la barre d'actions ULTRA-MODERNE"""
+        # Frame principal avec fond moderne
+        action_outer = tk.Frame(
+            parent,
+            bg=self.DARK_BG2,
+            relief='raised',
+            bd=2,
+            highlightthickness=1,
+            highlightbackground=self.BORDER_LIGHT
         )
-        self.selection_label.grid(row=0, column=0, sticky="w", padx=5)
+        action_outer.grid(row=1, column=0, sticky="ew", pady=(8, 8), padx=10)
 
-        # Frame pour la barre de progression et son label
-        progress_container = ttk.Frame(action_frame)
-        progress_container.grid(row=0, column=1, sticky="ew", padx=15)
-        progress_container.grid_columnconfigure(0, weight=1)
+        action_frame = tk.Frame(action_outer, bg=self.DARK_BG2)
+        action_frame.pack(fill="both", expand=True, padx=15, pady=12)
 
-        # Label pour le pourcentage et temps restant (au-dessus de la barre)
-        self.progress_label = ttk.Label(
+        # 📊 Label de sélection - MODERNE avec badge
+        selection_container = tk.Frame(action_frame, bg=self.DARK_BG3, relief='raised', bd=2)
+        selection_container.pack(side="left", padx=(0, 20))
+
+        self.selection_label = tk.Label(
+            selection_container,
+            text="📋 0 programme(s) sélectionné(s)",
+            font=('Segoe UI', 12, 'bold'),
+            fg=self.ACCENT_CYAN,
+            bg=self.DARK_BG3,
+            padx=20,
+            pady=8
+        )
+        self.selection_label.pack()
+
+        # 📊 Frame pour la barre de progression
+        progress_container = tk.Frame(action_frame, bg=self.DARK_BG2)
+        progress_container.pack(side="left", fill="x", expand=True, padx=10)
+
+        # Label pour le pourcentage - MODERNE
+        self.progress_label = tk.Label(
             progress_container,
             text="",
-            font=('Segoe UI', 9),
-            foreground=self.PROGRESS_GREEN
+            font=('Segoe UI', 10, 'bold'),
+            fg=self.PROGRESS_FILL,
+            bg=self.DARK_BG2,
+            anchor='w'
         )
-        self.progress_label.grid(row=0, column=0, sticky="ew")
+        self.progress_label.pack(fill="x", pady=(0, 5))
 
-        # Barre de progression VERTE
+        # 🎯 Barre de progression ULTRA-MODERNE
         self.progress_var = tk.DoubleVar()
         self.progress_bar = ttk.Progressbar(
             progress_container,
             variable=self.progress_var,
             maximum=100,
-            length=200,
+            length=300,
             style='Green.Horizontal.TProgressbar'
         )
-        self.progress_bar.grid(row=1, column=0, sticky="ew")
-        
-        # Bouton d'organisation des programmes
+        self.progress_bar.pack(fill="x")
+
+        # Container pour les boutons d'action
+        buttons_frame = tk.Frame(action_frame, bg=self.DARK_BG2)
+        buttons_frame.pack(side="right", padx=(10, 0))
+
+        # 🔄 Bouton d'organisation
         self.organize_button = ttk.Button(
-            action_frame,
+            buttons_frame,
             text="🔄 ORGANISER",
             command=self.open_organize_dialog,
             style='Action.TButton'
         )
-        self.organize_button.grid(row=0, column=2, sticky="e", padx=5)
-        
-        # Bouton d'ajout de programme
+        self.organize_button.pack(side="left", padx=5)
+
+        # ➕ Bouton d'ajout
         self.add_program_button = ttk.Button(
-            action_frame,
+            buttons_frame,
             text="➕ AJOUTER",
             command=self.add_custom_program,
             style='Action.TButton'
         )
-        self.add_program_button.grid(row=0, column=3, sticky="e", padx=5)
-        
-        # Bouton d'installation (PLUS COMPACT)
+        self.add_program_button.pack(side="left", padx=5)
+
+        # 🚀 Bouton d'installation - ULTRA VISIBLE
         self.install_button = ttk.Button(
-            action_frame,
+            buttons_frame,
             text="🚀 INSTALLER",
             command=self.start_installation,
             style='Action.TButton',
-            state='disabled'  # Initialement désactivé
+            state='disabled'
         )
-        self.install_button.grid(row=0, column=4, sticky="e", padx=5)
+        self.install_button.pack(side="left", padx=5)
     
     def _on_mousewheel(self, event):
         """Gestion du scroll avec la molette"""
@@ -701,15 +923,30 @@ class NiTriteGUIComplet:
         self.update_selection_count()
     
     def update_selection_count(self):
-        """Met à jour le compteur de sélection"""
+        """🎨 Met à jour le compteur de sélection avec style moderne"""
         selected_count = sum(1 for var in self.program_vars.values() if var.get())
         total_count = len(self.program_vars)
-        
+
+        # Couleur dynamique selon le nombre de sélections
+        if selected_count == 0:
+            color = self.DARK_FG3
+            icon = "📋"
+        elif selected_count < 10:
+            color = self.ACCENT_CYAN
+            icon = "📌"
+        elif selected_count < 30:
+            color = self.ACCENT_YELLOW
+            icon = "⭐"
+        else:
+            color = self.ACCENT_GREEN
+            icon = "🎯"
+
         self.selection_label.config(
-            text=f"{selected_count} programme(s) sélectionné(s) sur {total_count}"
+            text=f"{icon} {selected_count} / {total_count} programmes sélectionnés",
+            fg=color
         )
-        
-        # Activer/désactiver le bouton
+
+        # Activer/désactiver le bouton avec animation visuelle
         if selected_count > 0:
             self.install_button.config(state='normal')
         else:
