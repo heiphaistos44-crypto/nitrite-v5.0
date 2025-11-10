@@ -575,7 +575,7 @@ class NiTriteGUIComplet:
             category_header.grid(row=row, column=0, sticky="ew", pady=(10, 5), padx=5)
             category_header.grid_columnconfigure(1, weight=1)
 
-            # 🔽 Bouton plier/déplier moderne avec style
+            # 🔽 Bouton plier/déplier simple
             collapse_btn = tk.Button(
                 category_header,
                 text="▼",
@@ -583,8 +583,6 @@ class NiTriteGUIComplet:
                 height=1,
                 bg=self.ACCENT_ORANGE,
                 fg='#ffffff',
-                activebackground=self.ACCENT_ORANGE_LIGHT,
-                activeforeground='#ffffff',
                 font=('Segoe UI', 11, 'bold'),
                 relief='raised',
                 bd=2,
@@ -592,15 +590,6 @@ class NiTriteGUIComplet:
                 command=lambda cat=category: self.toggle_category(cat)
             )
             collapse_btn.grid(row=0, column=0, padx=8, pady=5)
-
-            # Effet de survol pour bouton plier/déplier
-            def collapse_enter(e):
-                e.widget.config(bg=self.ACCENT_ORANGE_LIGHT, relief='raised', bd=3)
-            def collapse_leave(e):
-                e.widget.config(bg=self.ACCENT_ORANGE, relief='raised', bd=2)
-
-            collapse_btn.bind("<Enter>", collapse_enter)
-            collapse_btn.bind("<Leave>", collapse_leave)
 
             # 📂 Label de catégorie avec fond et style moderne
             category_label = tk.Label(
@@ -614,15 +603,13 @@ class NiTriteGUIComplet:
             )
             category_label.grid(row=0, column=1, sticky="ew", padx=10, pady=5)
 
-            # ✅ Bouton sélectionner tout - Style moderne
+            # ✅ Bouton sélectionner tout - Simple
             select_cat_btn = tk.Button(
                 category_header,
                 text="✓ Tout sélectionner",
                 font=('Segoe UI', 10, 'bold'),
                 bg=self.ACCENT_GREEN,
                 fg='#ffffff',
-                activebackground=self.ACCENT_GREEN_LIGHT,
-                activeforeground='#ffffff',
                 relief='raised',
                 bd=2,
                 cursor='hand2',
@@ -631,15 +618,6 @@ class NiTriteGUIComplet:
                 command=lambda c=category: self.select_category(c)
             )
             select_cat_btn.grid(row=0, column=2, padx=8, pady=5)
-
-            # Effet de survol pour bouton sélection
-            def select_enter(e):
-                e.widget.config(bg=self.ACCENT_GREEN_LIGHT, relief='raised', bd=3)
-            def select_leave(e):
-                e.widget.config(bg=self.ACCENT_GREEN, relief='raised', bd=2)
-
-            select_cat_btn.bind("<Enter>", select_enter)
-            select_cat_btn.bind("<Leave>", select_leave)
             
             row += 1
 
@@ -686,42 +664,19 @@ class NiTriteGUIComplet:
                 checkbox_frame = ttk.Frame(prog_frame)
                 checkbox_frame.pack(anchor='w', fill='x')
 
-                # 🌐 Bouton web moderne avec effet 3D et survol
+                # • Simple petit point pour lien web
                 download_url = program_info.get('download_url', '')
                 if download_url:
-                    web_btn = tk.Button(
+                    web_point = tk.Label(
                         checkbox_frame,
-                        text="🌐",
-                        command=lambda url=download_url: self.open_download_link(url),
-                        width=2,
-                        height=1,
-                        bg=self.ACCENT_BLUE,
-                        fg='#ffffff',
-                        activebackground=self.ACCENT_BLUE_LIGHT,
-                        activeforeground='#ffffff',
-                        relief='raised',
-                        bd=2,
-                        font=('Segoe UI', 10, 'bold'),
-                        cursor='hand2',
-                        highlightthickness=0,
-                        highlightbackground=self.ACCENT_BLUE_LIGHT
+                        text="•",
+                        font=('Arial', 8),
+                        fg=self.ACCENT_BLUE,
+                        bg=self.DARK_BG,
+                        cursor='hand2'
                     )
-                    web_btn.pack(side='left', padx=(0, 5))
-
-                    # Effets de survol modernes
-                    def on_enter(e):
-                        e.widget.config(bg=self.ACCENT_BLUE_LIGHT, relief='raised', bd=3)
-                    def on_leave(e):
-                        e.widget.config(bg=self.ACCENT_BLUE, relief='raised', bd=2)
-                    def on_press(e):
-                        e.widget.config(relief='sunken', bd=2)
-                    def on_release(e):
-                        e.widget.config(relief='raised', bd=3)
-
-                    web_btn.bind("<Enter>", on_enter)
-                    web_btn.bind("<Leave>", on_leave)
-                    web_btn.bind("<ButtonPress-1>", on_press)
-                    web_btn.bind("<ButtonRelease-1>", on_release)
+                    web_point.pack(side='left', padx=(0, 6))
+                    web_point.bind("<Button-1>", lambda e, url=download_url: self.open_download_link(url))
 
                 # Checkbox avec nom du programme (à droite du bouton web)
                 checkbox = ttk.Checkbutton(
